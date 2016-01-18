@@ -15,9 +15,9 @@ namespace cg1 {
     Scene::Scene() :
         program_{ std::make_unique<GPUProgram>("ExampleProgram",
             std::initializer_list<std::string>{"example.vert", "example.frag"}) },
-        mesh_{ std::make_unique<Mesh>("example.obj") },
-        diffuseTex_{ std::make_unique<Texture>("example_d.tga") },
-        heightTex_{ std::make_unique<Texture>("example_h.tga") },
+        mesh_{ std::make_unique<Mesh>("meshes/example.obj") },
+        diffuseTex_{ std::make_unique<Texture>("textures/example_d.tga") },
+        heightTex_{ std::make_unique<Texture>("textures/example_h.tga") },
         matModelUniformLocation_{ -1 },
         matNormalUniformLocation_{ -1 },
         matMVPUniformLocation_{ -1 },
