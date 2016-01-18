@@ -6,7 +6,6 @@
 #include "../gfx/Texture.h"
 #include "../gfx/Mesh.h"
 #include <imgui.h>
-#include "../core/SceneObject.h"
 
 #include <sstream>
 
@@ -17,7 +16,7 @@ namespace cg1 {
      */
     Scene::Scene() :
         program_{ std::make_unique<GPUProgram>("ExampleProgram",
-            std::initializer_list<std::string>{"example.vert", "example.frag"}) },
+            std::initializer_list<std::string>{"sceneShader.vert", "sceneShader.frag"}) },
         matModelUniformLocation_{ -1 },
         matNormalUniformLocation_{ -1 },
         matMVPUniformLocation_{ -1 },
@@ -80,7 +79,6 @@ namespace cg1 {
             ImGui::Text("Hello World");
             ImGui::End();
         }
-		SceneObject* scobj = new SceneObject("example.obj", { "example_d.tga", "example_h.tga" });
 
         glUseProgram(program_->getProgramId());
         //////////////////////////////////////////////////////////////////////////////////////////////////////////

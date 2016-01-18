@@ -27,6 +27,13 @@ out vec2 fragTexCoord;
 out vec3 fragVert;
 flat out int shaderMode_;
 
+struct waveData{
+	float amplitude;
+	vec2 dir;
+	float frequency;
+	float phase;
+	float k;
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Empty shader
@@ -43,13 +50,7 @@ void emptyShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Water shader
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-struct waveData{
-	float amplitude;
-	vec2 dir;
-	float frequency;
-	float phase;
-	float k;
-};
+
 
 float evalWaveFkt(waveData data, vec2 pos){
 	// Wolfram alpha: f = d/dy a*2*((sin((d*x+e*y)*w + t*p)+1)/2)^k, d= dir.x, e = dir.y
