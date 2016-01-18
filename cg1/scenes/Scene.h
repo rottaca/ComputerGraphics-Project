@@ -28,37 +28,60 @@ namespace cg1 {
         void renderScene();
         void updateScene(const CG1Camera& camera, double currentTime, double elapsedTime) noexcept;
 
+        typedef enum {} tShaderMode;
+
+        // Private member functions
+    private:
+        /* Updates uniforms for light calculations in the shader. */
+        void updateLight();
+        std::string getLightUniformName(const char* propertyName, size_t lightIndex);
+
+        // Private member variables
     private:
         /** Holds the scenes GPU program. */
         std::unique_ptr<GPUProgram> program_;
-        /** Holds the mesh. */
-        std::unique_ptr<Mesh> mesh_;
-        /** Holds the diffuse texture. */
-        std::unique_ptr<Texture> diffuseTex_;
-        /** Holds the height texture. */
-        std::unique_ptr<Texture> heightTex_;
 
+        struct Light {
+            glm::vec4 position;
+            glm::vec3 intensities; //a.k.a. the color of the light
+            float attenuation;
+            float ambientCoefficient;
+            float coneAngle;
+            glm::vec3 coneDirection;
+        };
+        std::vector<Light> gLights;
+
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Uniforms
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         /** Holds uniform name for the model matrix. */
         GLint matModelUniformLocation_;
         /** Holds uniform name for the normal matrix. */
         GLint matNormalUniformLocation_;
         /** Holds uniform name for the model-view-projection matrix. */
         GLint matMVPUniformLocation_;
-        /** Holds uniform name for the diffuse texture. */
-        GLint texDiffuseUniformLocation_;
-        /** Holds uniform name for the height texture. */
-        GLint texHeightUniformLocation_;
-        /** Holds uniform name for the height color. */
-        GLint vecHeightColorUniformLocation_;
 
+
+
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         /** Holds the model matrix. */
         glm::mat4 modelMatrix_;
         /** Holds the normal matrix. */
         glm::mat4 normalMatrix_;
         /** Holds the MVP matrix. */
         glm::mat4 MVPMatrix_;
+        /* Holds the view matrix.*/
+        glm::mat4 viewMatrix_;
 
-        /** Holds the color value changed by the ant tweak bar. */
-        glm::vec3 heightColor;
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        float currentTime_;
     };
 }
