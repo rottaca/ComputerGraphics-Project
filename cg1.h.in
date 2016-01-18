@@ -1,0 +1,52 @@
+#pragma once
+
+#include <glad/glad.h>
+#include <glm/fwd.hpp>
+#include <stb_image.h>
+
+#include <string>
+#include <memory>
+#include <vector>
+
+namespace cg1 {
+    namespace config {
+
+        /** The windows width. */
+        constexpr int windowWidth = @CG1_WINDOW_WIDTH@;
+        /** The windows height. */
+        constexpr int windowHeight = @CG1_WINDOW_HEIGHT@;
+        /** The base path for shaders. */
+        constexpr auto shaderBasePath = @CG1_SHADER_BASE_PATH@;
+        /** The base path for resources (textures, models). */
+        constexpr auto resourceBasePath = @CG1_RESOURCE_BASE_PATH@;
+    }
+    
+    namespace utils {
+
+        /**
+         *  Checks if a string end with another.
+         *  @param s the string to check.
+         *  @param e the ending to check for.
+         */
+        static bool endsWith(const std::string& s, const std::string& e) {
+            if (s.length() >= e.length()) {
+                return (0 == s.compare(s.length() - e.length(), e.length(), e));
+            } else {
+                return false;
+            }
+        }
+
+        /**
+         *  Checks if a string starts with another.
+         *  @param s the string to check.
+         *  @param e the beginning to check for.
+         */
+        static bool beginsWith(const std::string& s, const std::string& b) {
+            if (s.length() >= b.length()) {
+                return (0 == s.compare(0, b.length(), b));
+            } else {
+                return false;
+            }
+        }
+    }
+}
