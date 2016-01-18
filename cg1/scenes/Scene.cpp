@@ -6,6 +6,7 @@
 #include "../gfx/Texture.h"
 #include "../gfx/Mesh.h"
 #include <imgui.h>
+#include "../core/SceneObject.h"
 
 #include <sstream>
 
@@ -79,6 +80,7 @@ namespace cg1 {
             ImGui::Text("Hello World");
             ImGui::End();
         }
+		SceneObject* scobj = new SceneObject("example.obj", { "example_d.tga", "example_h.tga" });
 
         glUseProgram(program_->getProgramId());
         //////////////////////////////////////////////////////////////////////////////////////////////////////////

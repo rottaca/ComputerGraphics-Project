@@ -20,9 +20,9 @@ SceneObject::~SceneObject()
 }
 
 SceneObject::SceneObject(const std::string& mesh, std::initializer_list<std::string> textures) {
-	m_pMesh = std::make_unique<Mesh>(mesh);
+	m_pMesh = std::make_unique<Mesh>(PATH_MESHES + "/" + mesh);
 	for (std::initializer_list<std::string>::iterator it = textures.begin(); it != textures.end(); ++it) {
-		m_Textures.push_back(std::make_unique<Texture>(*it));
+		m_Textures.push_back(std::make_unique<Texture>(PATH_TEXTURES + "/" + *it));
 	}
 }
 
