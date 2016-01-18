@@ -6,6 +6,7 @@
 #include "../gfx/Texture.h"
 #include "../gfx/Mesh.h"
 #include <imgui.h>
+#include "../core/SceneObject.h"
 
 namespace cg1 {
 
@@ -67,6 +68,7 @@ namespace cg1 {
             ImGui::ColorEdit3("Height Color (Example)", reinterpret_cast<float*>(&heightColor));
             ImGui::End();
         }
+		SceneObject* scobj = new SceneObject("example.obj", { "example_d.tga", "example_h.tga" });
 
         glUseProgram(program_->getProgramId());
         glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrix_));
