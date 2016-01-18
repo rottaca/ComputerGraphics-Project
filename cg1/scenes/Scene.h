@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include "core/Camera.h"
 #include "core/FreeCamera.h"
+#include "core/SceneObject.h"
 
 namespace cg1 {
 
@@ -63,7 +64,7 @@ namespace cg1 {
         /** Holds uniform name for the model-view-projection matrix. */
         GLint matMVPUniformLocation_;
 
-
+        GLint tex0UniformLocation_;
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////

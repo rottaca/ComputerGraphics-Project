@@ -28,7 +28,7 @@ namespace cg1 {
         matModelUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matModel");
         matNormalUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matNormal");
         matMVPUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matMVP");
-
+        tex0UniformLocation_ = glGetUniformLocation(program_->getProgramId(), "tex");
 
         // setup lights
         Light spotlight;
@@ -100,8 +100,10 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Render Scene
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
+        SceneObject obj("terrainSurface.obj",{"terrain-texture.tga"});
 
-
+        glUniform1i(tex0UniformLocation_,0);
+        obj.bindTexturesAndDrawMesh();
 
         glUseProgram(0);
     }
@@ -127,6 +129,6 @@ namespace cg1 {
     {
         std::ostringstream ss;
         ss << "allLights[" << lightIndex << "]." << propertyName;
-        std::string uniformName = ss.str();
+        return ss.str();
     }
 }
