@@ -61,7 +61,6 @@ namespace cg1 {
      */
     void Scene::updateScene(const CG1Camera& camera, double currentTime, double elapsedTime) noexcept
     {
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrix_));
         MVPMatrix_ = camera.getProjMatrix() * camera.getViewMatrix() * modelMatrix_;
         viewMatrix_ = camera.getViewMatrix();
 
@@ -85,8 +84,6 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Update general uniforms
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrix_));
-        glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
         glUniformMatrix4fv(matMVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&MVPMatrix_));
 
         // Update Light
@@ -96,6 +93,9 @@ namespace cg1 {
         // Update Scene properties
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrix_));
+        normalMatrix_ = glm::mat4(glm::mat3(modelMatrix_));
+        glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Render Scene
