@@ -15,10 +15,10 @@ namespace cg1 {
 
     // TODO: select the camera model for the application here. [1/13/2016 Sebastian Maisch]
     // also: if camera model is free, GUI should be disabled.
-    using CG1Camera = Camera;
-    constexpr bool DRAW_GUI = true;
-    //using CG1Camera = FreeCamera;
-    //constexpr bool DRAW_GUI = false;
+    //using CG1Camera = Camera;
+    //constexpr bool DRAW_GUI = true;
+    using CG1Camera = FreeCamera;
+    constexpr bool DRAW_GUI = false;
 
     class Scene
     {
@@ -29,7 +29,10 @@ namespace cg1 {
         void renderScene();
         void updateScene(const CG1Camera& camera, double currentTime, double elapsedTime) noexcept;
 
-        typedef enum {} tShaderMode;
+        typedef enum {
+        	DEFAULT = 0,
+			WATER = 1
+        } tShaderMode;
 
         // Private member functions
     private:
@@ -42,7 +45,6 @@ namespace cg1 {
     private:
         /** Holds the scenes GPU program. */
         std::unique_ptr<GPUProgram> program_;
-        SceneObject* obj_;
 
         struct Light {
             glm::vec4 position;
@@ -69,12 +71,13 @@ namespace cg1 {
 
         GLint tex0UniformLocation_;
 
+        GLint shaderModeUniformLocation_;
+        GLint timeUniformLocation_;
+
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         //
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        /** Holds the model matrix. */
-        glm::mat4 modelMatrix_;
         /** Holds the normal matrix. */
         glm::mat4 normalMatrix_;
         /** Holds the VP matrix. */
@@ -87,5 +90,14 @@ namespace cg1 {
         //
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         float currentTime_;
+
+
+
+        glm::mat4 modelMatrixTerrain_;
+        SceneObject* objTerrain_;
+        glm::mat4 modelMatrixWater_;
+        SceneObject* objWater_;
+        glm::mat4 modelMatrixStoneHenge_;
+        SceneObject* objStoneHenge_;
     };
 }
