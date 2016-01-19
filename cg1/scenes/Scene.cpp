@@ -8,6 +8,7 @@
 #include <imgui.h>
 
 #include <sstream>
+#include <iostream>
 
 namespace cg1 {
 
@@ -17,41 +18,43 @@ namespace cg1 {
     Scene::Scene() :
         program_{ std::make_unique<GPUProgram>("ExampleProgram",
             std::initializer_list<std::string>{"sceneShader.vert", "sceneShader.frag"}) },
-        matModelUniformLocation_{ -1 },
-        matNormalUniformLocation_{ -1 },
-        matMVPUniformLocation_{ -1 },
         modelMatrix_{ 1.0f },
         normalMatrix_{ 1.0f },
-        MVPMatrix_{ 1.0f },
-		viewMatrix_{1.0f}
+        VPMatrix_{ 1.0f },
+		viewMatrix_{1.0f},
+		currentTime_{0},
+		obj_{new SceneObject("terrainSurface.obj",{"terrain-texture.tga"})}
     {
         matModelUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matModel");
         matNormalUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matNormal");
-        matMVPUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matMVP");
+        matVPUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matVP");
         tex0UniformLocation_ = glGetUniformLocation(program_->getProgramId(), "tex");
+        cameraPosUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "camPos");
 
         // setup lights
-        Light spotlight;
-        spotlight.position = glm::vec4(0,10,10,1);
-        spotlight.intensities = glm::vec3(2,2,2); //strong white light
-        spotlight.attenuation = 0.1f;
-        spotlight.ambientCoefficient = 0.0f; //no ambient light
-        spotlight.coneAngle = 15.0f;
-        spotlight.coneDirection = glm::vec3(0,-1,0);
-
         Light directionalLight;
-        directionalLight.position = glm::vec4(10, 10, 0, 0); //w == 0 indications a directional light
+        directionalLight.position = glm::vec4(50, 50, 50, 0); //w == 0 indications a directional light
         directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
         directionalLight.ambientCoefficient = 0.06;
 
-        gLights.push_back(spotlight);
+//        Light spotlight;
+//        spotlight.position = glm::vec4(2,2,2,1);
+//        spotlight.intensities = glm::vec3(2,2,2); //strong white light
+//        spotlight.attenuation = 0.1f;
+//        spotlight.ambientCoefficient = 0.0f; //no ambient light
+//        spotlight.coneAngle = 30.0f;
+//        spotlight.coneDirection = glm::vec3(-1,-1,-1);
+
+//        gLights.push_back(spotlight);
         gLights.push_back(directionalLight);
     }
 
     /**
      *  Destructor.
      */
-    Scene::~Scene() = default;
+    Scene::~Scene(){
+    	delete obj_;
+    }
 
     /**
      *  Updates the current scene.
@@ -61,9 +64,9 @@ namespace cg1 {
      */
     void Scene::updateScene(const CG1Camera& camera, double currentTime, double elapsedTime) noexcept
     {
-        MVPMatrix_ = camera.getProjMatrix() * camera.getViewMatrix() * modelMatrix_;
+        VPMatrix_ = camera.getProjMatrix() * camera.getViewMatrix();
         viewMatrix_ = camera.getViewMatrix();
-
+        camPos_ = camera.getPosition();
         currentTime_ = currentTime;
     }
 
@@ -84,7 +87,8 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Update general uniforms
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        glUniformMatrix4fv(matMVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&MVPMatrix_));
+        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&VPMatrix_));
+        glUniform3fv(cameraPosUniformLocation_, 1, reinterpret_cast<GLfloat*>(&camPos_));
 
         // Update Light
         updateLight();
@@ -100,10 +104,11 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Render Scene
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        SceneObject obj("terrainSurface.obj",{"terrain-texture.tga"});
+
+        updateMaterial(1,glm::vec3(0.1,0.1,0.1));
 
         glUniform1i(tex0UniformLocation_,0);
-        obj.bindTexturesAndDrawMesh();
+        obj_->bindTexturesAndDrawMesh();
 
         glUseProgram(0);
     }
@@ -116,12 +121,13 @@ namespace cg1 {
     	glUniform1i(glGetUniformLocation(program_->getProgramId(), "numLights"), (int)gLights.size());
 
     	for(size_t i = 0; i < gLights.size(); ++i){
-    		glUniform4fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str()), 4, reinterpret_cast<GLfloat*>(&gLights[i].position));
-    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("intensities", i).c_str()),3, reinterpret_cast<GLfloat*>(&gLights[i].intensities));
+    		std::cout << "Light: " << i << std::endl;
+    		glUniform4fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str()), 1, reinterpret_cast<GLfloat*>(&gLights[i].position));
+    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("intensities", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i].intensities));
     		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("attenuation", i).c_str()), gLights[i].attenuation);
     		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("ambientCoefficient", i).c_str()), gLights[i].ambientCoefficient);
     		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneAngle", i).c_str()), gLights[i].coneAngle);
-    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str()),3, reinterpret_cast<GLfloat*>(&gLights[i].coneDirection));
+    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i].coneDirection));
     	}
     }
 
@@ -129,6 +135,12 @@ namespace cg1 {
     {
         std::ostringstream ss;
         ss << "allLights[" << lightIndex << "]." << propertyName;
+        std::cout << ss.str() << std::endl;
         return ss.str();
+    }
+    void Scene::updateMaterial(float shininess, glm::vec3 specularColor)
+    {
+    	glUniform1f(glGetUniformLocation(program_->getProgramId(),"material.shininess"),shininess);
+    	glUniform3fv(glGetUniformLocation(program_->getProgramId(),"material.specularColor"),1, reinterpret_cast<GLfloat*>(&specularColor));
     }
 }

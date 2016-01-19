@@ -21,6 +21,12 @@ uniform struct Light {
    vec3 coneDirection;
 } allLights[MAX_LIGHTS];
 
+uniform struct Material{
+	float shininess;
+	vec3 specularColor;
+} material;
+uniform vec3 camPos;
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
@@ -30,7 +36,9 @@ in vec2 fragTexCoord;
 in vec3 fragVert;
 flat in int shaderMode_;
 
-
+/////////////////////////////////////////////////////////////////////////////
+// Output
+/////////////////////////////////////////////////////////////////////////////
 out vec4 outputColor;
 
 // Applies the specified light
@@ -53,6 +61,8 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
             attenuation = 0.0;
         }
     }
+    
+    
 
     //ambient
     vec3 ambient = light.ambientCoefficient * surfaceColor.rgb * light.intensities;
@@ -64,8 +74,8 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
     //specular
     float specularCoefficient = 0.0;
     if(diffuseCoefficient > 0.0)
-        specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), materialShininess);
-    vec3 specular = specularCoefficient * materialSpecularColor * light.intensities;
+        specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), material.shininess);
+    vec3 specular = specularCoefficient * material.specularColor * light.intensities;
 
     //linear color (color before gamma correction)
     return ambient + attenuation*(diffuse + specular);
@@ -73,14 +83,19 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Empty shader, no light
+// Phong lighting model
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
+	vec3 surfaceColor = vec3(texture2D(tex,fragTexCoord.xy));
+	
 	vec3 linearColor = vec3(0);
 	for(int i = 0; i < numLights; ++i){
-	    linearColor += ApplyLight(allLights[i], surfaceColor.rgb, normal, surfacePos, surfaceToCamera);
+	    linearColor += ApplyLight(allLights[i], surfaceColor, fragNormal, vec3(fragVert), vec3(camPos - fragVert));
 	}
-	outputColor = linearColor;
+	outputColor = vec4(linearColor,1.0f);
+}
+void emptyShader(){
+	outputColor = texture2D(tex,fragTexCoord.xy);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

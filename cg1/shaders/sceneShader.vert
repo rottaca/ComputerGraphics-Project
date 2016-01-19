@@ -12,7 +12,7 @@ layout(location = 2) in vec2 texCoord;
 /////////////////////////////////////////////////////////////////////////////
 uniform mat4 matModel;
 uniform mat4 matNormal;
-uniform mat4 matMVP;
+uniform mat4 matVP;
 
 uniform float waveHeight;
 uniform float waveWidth;
@@ -43,7 +43,7 @@ void emptyShader(){
     fragTexCoord = texCoord;
     fragNormal = mat3(matNormal) * normal;
     fragVert = vec3(matModel*position);
-    gl_Position = matMVP * position;
+    gl_Position = matVP * matModel* position;
 
 }
 
@@ -129,7 +129,7 @@ void waterShader(){
 	pos.y = hRes;
 	
     fragNormal = normalize(mat3(matNormal)*n);
-    gl_Position = matMVP * pos;
+    gl_Position = matVP * matModel* pos;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
