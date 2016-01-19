@@ -145,6 +145,9 @@ namespace cg1 {
         updateMaterial(0.1,glm::vec3(0.1,0.1,0.1));
         objStoneHenge_->bindTexturesAndDrawMesh();
 
+        // TODO
+        // renderSceneObject(...);
+
         glUseProgram(0);
     }
 
@@ -175,5 +178,10 @@ namespace cg1 {
     {
     	glUniform1f(glGetUniformLocation(program_->getProgramId(),"material.shininess"),shininess);
     	glUniform3fv(glGetUniformLocation(program_->getProgramId(),"material.specularColor"),1, reinterpret_cast<GLfloat*>(&specularColor));
+    }
+
+    void Scene::renderSceneObject(SceneObject obj, tShaderMode shaderMode)
+    {
+    	// TODO
     }
 }

@@ -15,10 +15,10 @@ namespace cg1 {
 
     // TODO: select the camera model for the application here. [1/13/2016 Sebastian Maisch]
     // also: if camera model is free, GUI should be disabled.
-    using CG1Camera = Camera;
-    constexpr bool DRAW_GUI = true;
-    //using CG1Camera = FreeCamera;
-    //constexpr bool DRAW_GUI = false;
+    //using CG1Camera = Camera;
+    //constexpr bool DRAW_GUI = true;
+    using CG1Camera = FreeCamera;
+    constexpr bool DRAW_GUI = false;
 
     class Scene
     {
@@ -40,6 +40,8 @@ namespace cg1 {
         void updateLight();
         std::string getLightUniformName(const char* propertyName, size_t lightIndex);
         void updateMaterial(float shininess, glm::vec3 specularColor);
+
+        void renderSceneObject(SceneObject obj, tShaderMode shaderMode);
 
         // Private member variables
     private:
