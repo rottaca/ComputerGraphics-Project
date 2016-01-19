@@ -24,8 +24,8 @@ namespace cg1 {
         VPMatrix_{ 1.0f },
 		viewMatrix_{1.0f},
 		currentTime_{0},
-		objTerrain_{new SceneObject("terrainSurface.obj",{"terrain-texture.tga"})},
-		objWater_{new SceneObject("waterSurface.obj",{"water-texture.tga"})},
+		objTerrain_{new SceneObject("terrainSurface.obj",{"terrain_DIFFUSE.jpg"})},
+		objWater_{new SceneObject("waterSurface.obj",{"water_DIFFUSE.jpg"})},
 		objStoneHenge_{new SceneObject("Stonehengebed.obj",{"Stonehenge_texture.png"})}
     {
         matModelUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matModel");
@@ -44,7 +44,7 @@ namespace cg1 {
 
         // setup lights
         Light directionalLight;
-        directionalLight.position = glm::vec4(50, 50, 0, 0); //w == 0 indications a directional light
+        directionalLight.position = glm::vec4(10, 10, 0, 0); //w == 0 indications a directional light
         directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
         //directionalLight.intensities = glm::vec3(0.2,0.2,0.2); //white light
         directionalLight.ambientCoefficient = 0.06;
@@ -135,7 +135,7 @@ namespace cg1 {
         glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixWater_));
         normalMatrix_ = glm::mat4(glm::mat3(modelMatrixWater_));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(1,glm::vec3(0.1,0.1,0.1));
+        updateMaterial(0.5,glm::vec3(0.1,0.1,0.1));
         objWater_->bindTexturesAndDrawMesh();
 
         glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
