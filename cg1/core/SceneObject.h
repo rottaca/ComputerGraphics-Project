@@ -30,7 +30,9 @@ namespace cg1 {
 
         typedef enum {
         	DEFAULT = 0,
-			WATER = 1
+			WATER = 1,
+			DEFAULT_DEPTH = 4,
+			WATER_DEPTH = 5
         } tShaderMode;
 
 		SceneObject();

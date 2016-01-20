@@ -37,9 +37,11 @@ namespace cg1 {
         std::string getLightUniformName(const char* propertyName, size_t lightIndex);
         void updateMaterial(float shininess, glm::vec3 specularColor);
 
-        void renderSceneObjects();
+        void renderSceneObjects(bool onlyDepth=false);
 
         void initShadowMapping();
+        void renderDepthImage();
+        void renderRealImage();
 
         // Private member variables
     private:
@@ -77,6 +79,8 @@ namespace cg1 {
         GLint timeUniformLocation_;
 
 
+
+
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         //
         /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,8 +108,9 @@ namespace cg1 {
         // Shadow Mapping
         // Source: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        GLuint frameBufferId_;
-        GLuint depthTextureId_;
+        std::vector<GLuint> frameBufferId_;
+        std::vector<GLuint> depthTextureId_;
+        GLuint depthTextureUniformLocation_;
 
 
     };

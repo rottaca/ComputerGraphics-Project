@@ -4,6 +4,7 @@
 // Uniforms
 /////////////////////////////////////////////////////////////////////////////
 uniform sampler2D tex;
+uniform sampler2D depthTex;
 
 /////////////////////////////////////////////////////////////////////////////
 // Light
@@ -35,7 +36,7 @@ uniform vec3 camPos;
 /////////////////////////////////////////////////////////////////////////////
 in vec3 fragNormal;
 in vec2 fragTexCoord;
-in vec3 fragVert;
+in vec3 fragVertWorld;
 flat in int shaderMode_;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -88,16 +89,27 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
 	vec3 surfaceColor = vec3(texture(tex,fragTexCoord.xy));
-	vec3 surfaceToCamera = normalize(vec3(camPos - fragVert));
+	//vec3 surfaceColor = vec3(texture(depthTex,gl_FragCoord.xy));
+	vec3 surfaceToCamera = normalize(vec3(camPos - fragVertWorld));
 	
 	vec3 linearColor = vec3(0);
 	for(int i = 0; i < numLights; ++i){
-	    linearColor += ApplyLight(allLights[i], surfaceColor, fragNormal, vec3(fragVert), surfaceToCamera);
+	    linearColor += ApplyLight(allLights[i], surfaceColor, fragNormal, vec3(fragVertWorld), surfaceToCamera);
 	}
 	outputColor = vec4(linearColor,1.0f);
 }
 void emptyShader(){
 	outputColor = texture(tex,fragTexCoord.xy);
+}
+
+void depthDisplayShader(){
+	float z = texture2D(depthTex,vec2(gl_FragCoord.x/1280,gl_FragCoord.y/720)).x;
+		
+	float n = 1.0;                                // the near plane
+	float f = 100.0;                               // the far plane
+	float c = (2.0 * n) / (f + n - z * (f - n));  // convert to linear values
+	
+	outputColor = vec4(c,c,c,1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +118,15 @@ void emptyShader(){
 void main()
 {
 	switch(shaderMode_){
+		case 0:
+		case 1:
+			depthDisplayShader();
+			break;
+		case 4:
+		case 5:
+			emptyShader();
+			break;
+	
 		default:
 			LightShader();
 	}

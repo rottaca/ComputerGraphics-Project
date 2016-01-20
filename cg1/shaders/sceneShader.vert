@@ -14,8 +14,6 @@ uniform mat4 matModel;
 uniform mat4 matNormal;
 uniform mat4 matVP;
 
-uniform float waveHeight;
-uniform float waveWidth;
 uniform float time;
 uniform int shaderMode;
 
@@ -24,7 +22,8 @@ uniform int shaderMode;
 /////////////////////////////////////////////////////////////////////////////
 out vec3 fragNormal;
 out vec2 fragTexCoord;
-out vec3 fragVert;
+out vec3 fragVertWorld;
+out vec3 fragVertClip;
 flat out int shaderMode_;
 
 struct waveData{
@@ -42,7 +41,7 @@ void emptyShader(){
 
     fragTexCoord = texCoord;
     fragNormal = mat3(matNormal) * normal;
-    fragVert = vec3(matModel*position);
+    fragVertWorld = vec3(matModel*position);
     gl_Position = matVP * matModel* position;
 
 }
@@ -84,7 +83,7 @@ vec2 evalWaveFktDxz(waveData data, vec2 pos){
 void waterShader(){
     fragTexCoord = texCoord;
     fragNormal = mat3(matNormal) * normal;
-    fragVert = vec3(matModel*position);
+    fragVertWorld = vec3(matModel*position);
 
 	vec4 pos = position;
 	
@@ -141,7 +140,12 @@ void main()
 
 	switch(shaderMode){
 		case 1:
+		case 5:
 			waterShader();
+			break;
+		case 0:
+		case 4:
+			emptyShader();
 			break;
 		default:
 			emptyShader();
