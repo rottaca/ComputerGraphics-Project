@@ -15,10 +15,10 @@ namespace cg1 {
 
     // TODO: select the camera model for the application here. [1/13/2016 Sebastian Maisch]
     // also: if camera model is free, GUI should be disabled.
-    //using CG1Camera = Camera;
-    //constexpr bool DRAW_GUI = true;
-    using CG1Camera = FreeCamera;
-    constexpr bool DRAW_GUI = false;
+    using CG1Camera = Camera;
+    constexpr bool DRAW_GUI = true;
+    //using CG1Camera = FreeCamera;
+    //constexpr bool DRAW_GUI = false;
 
     class Scene
     {
@@ -41,7 +41,9 @@ namespace cg1 {
         std::string getLightUniformName(const char* propertyName, size_t lightIndex);
         void updateMaterial(float shininess, glm::vec3 specularColor);
 
-        void renderSceneObject(SceneObject obj, tShaderMode shaderMode);
+        void renderSceneObjects();
+
+        void initShadowMapping();
 
         // Private member variables
     private:
@@ -51,7 +53,9 @@ namespace cg1 {
         struct Light {
             glm::vec4 position;
             glm::vec3 intensities; //a.k.a. the color of the light
-            float attenuation;
+            float att_c1;
+            float att_c2;
+            float att_c3;
             float ambientCoefficient;
             float coneAngle;
             glm::vec3 coneDirection;
@@ -101,5 +105,16 @@ namespace cg1 {
         SceneObject* objWater_;
         glm::mat4 modelMatrixStoneHenge_;
         SceneObject* objStoneHenge_;
+
+        std::vector<SceneObject> m_sceneObjects;
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Shadow Mapping
+        // Source: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        GLuint frameBufferId_;
+        GLuint depthTextureId_;
+
+
     };
 }

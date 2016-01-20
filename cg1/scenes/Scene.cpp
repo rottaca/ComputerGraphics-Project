@@ -44,29 +44,34 @@ namespace cg1 {
 
         // setup lights
         Light directionalLight;
-        directionalLight.position = glm::vec4(10, 10, 0, 0); //w == 0 indications a directional light
+        directionalLight.position = glm::vec4(100, 100, 0, 0); //w == 0 indications a directional light
         directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
         //directionalLight.intensities = glm::vec3(0.2,0.2,0.2); //white light
-        directionalLight.ambientCoefficient = 0.06;
-        directionalLight.attenuation = 0;
+        directionalLight.ambientCoefficient = 0.1;
+        directionalLight.att_c1 = 0;
+        directionalLight.att_c2 = 0;
+        directionalLight.att_c3 = 0;
         gLights.push_back(directionalLight);
 
         Light pointLight;
-		pointLight.position = glm::vec4(0, 5, 5, 1);
+		pointLight.position = glm::vec4(10, 1, 10, 1);
 		pointLight.intensities = glm::vec3(0.8, 0.6, 0.2); //weak yellowish light
-		pointLight.ambientCoefficient = 0.06;
+		pointLight.ambientCoefficient = 0;
 		pointLight.coneAngle = 360;
-		pointLight.attenuation = 0.05;
+		pointLight.att_c1 = 0;
+		pointLight.att_c2 = 0;
+		pointLight.att_c3 = 0.1f;
 		gLights.push_back(pointLight);
 
 		Light spotlight;
 		spotlight.position = glm::vec4(0, 7, 0, 1);
 		spotlight.intensities = glm::vec3(2, 2, 2); //strong white light
-		spotlight.attenuation = 0.1f;
-		spotlight.ambientCoefficient = 0.0f; //no ambient light
+		spotlight.att_c1 = 0;
+		spotlight.att_c2 = 0;
+		spotlight.att_c3 = 0.1f;
+		spotlight.ambientCoefficient = 0; //no ambient light
 		spotlight.coneAngle = 20.0f;
 		spotlight.coneDirection = glm::vec3(0, -1, 0);
-
 		gLights.push_back(spotlight);
     }
 
@@ -128,25 +133,25 @@ namespace cg1 {
         glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixTerrain_));
         normalMatrix_ = glm::mat4(glm::mat3(modelMatrixTerrain_));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(0.1,glm::vec3(0.1,0.1,0.1));
+        updateMaterial(100,glm::vec3(1,1,1));
         objTerrain_->bindTexturesAndDrawMesh();
 
         glUniform1i(shaderModeUniformLocation_,tShaderMode::WATER);
         glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixWater_));
         normalMatrix_ = glm::mat4(glm::mat3(modelMatrixWater_));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(0.5,glm::vec3(0.1,0.1,0.1));
+        updateMaterial(.5,glm::vec3(1,1,1));
         objWater_->bindTexturesAndDrawMesh();
 
         glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
         glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixStoneHenge_));
         normalMatrix_ = glm::mat4(glm::mat3(modelMatrixStoneHenge_));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(0.1,glm::vec3(0.1,0.1,0.1));
+        updateMaterial(100,glm::vec3(0.1,0.1,0.1));
         objStoneHenge_->bindTexturesAndDrawMesh();
 
         // TODO
-        // renderSceneObject(...);
+        //renderSceneObjects();
 
         glUseProgram(0);
     }
@@ -161,7 +166,9 @@ namespace cg1 {
     	for(size_t i = 0; i < gLights.size(); ++i){
     		glUniform4fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str()), 1, reinterpret_cast<GLfloat*>(&gLights[i].position));
     		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("intensities", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i].intensities));
-    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("attenuation", i).c_str()), gLights[i].attenuation);
+    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c1", i).c_str()), gLights[i].att_c1);
+    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c2", i).c_str()), gLights[i].att_c2);
+    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c3", i).c_str()), gLights[i].att_c3);
     		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("ambientCoefficient", i).c_str()), gLights[i].ambientCoefficient);
     		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneAngle", i).c_str()), gLights[i].coneAngle);
     		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i].coneDirection));
@@ -180,8 +187,41 @@ namespace cg1 {
     	glUniform3fv(glGetUniformLocation(program_->getProgramId(),"material.specularColor"),1, reinterpret_cast<GLfloat*>(&specularColor));
     }
 
-    void Scene::renderSceneObject(SceneObject obj, tShaderMode shaderMode)
+    void Scene::renderSceneObjects()
     {
-    	// TODO
+    	for(int i = 0; i < m_sceneObjects.size();i++){
+    		SceneObject& so = m_sceneObjects.at(i);
+
+            glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
+            glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixStoneHenge_));
+            normalMatrix_ = glm::mat4(glm::mat3(modelMatrixStoneHenge_));
+            glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
+            updateMaterial(100,glm::vec3(0.1,0.1,0.1));
+            so.bindTexturesAndDrawMesh();
+    	}
+    }
+    void Scene::initShadowMapping()
+    {
+    	// Setup buffer to render depth image
+		glGenFramebuffers(1, &frameBufferId_);
+		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferId_);
+
+		  // Depth texture. Texture that contains the rendered depth image
+		  glGenTextures(1, &depthTextureId_);
+		  glBindTexture(GL_TEXTURE_2D, depthTextureId_);
+		  glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT16, config::windowWidth, config::windowHeight, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		  // Attach a depth buffer (our texture) to the framebuffer
+		  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextureId_, 0);
+		  glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+
+		  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+			  std::cout << "Framebuffer not initialized because of Error!" << std::endl;
+			  return exit(-1);
+		  }
     }
 }

@@ -15,7 +15,9 @@ uniform int numLights;
 uniform struct Light {
    vec4 position;
    vec3 intensities; //a.k.a the color of the light
-   float attenuation;
+   float att_c1;
+   float att_c2;
+   float att_c3;
    float ambientCoefficient;
    float coneAngle;
    vec3 coneDirection;
@@ -53,7 +55,7 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
         //point light
         surfaceToLight = normalize(light.position.xyz - surfacePos);
         float distanceToLight = length(light.position.xyz - surfacePos);
-        attenuation = 1.0 / (1.0 + light.attenuation * pow(distanceToLight, 2));
+        attenuation = min(1,1/(light.att_c1+distanceToLight*light.att_c2+distanceToLight*distanceToLight*light.att_c3));
 
         //cone restrictions (affects attenuation)
         float lightToSurfaceAngle = degrees(acos(dot(-surfaceToLight, normalize(light.coneDirection))));
@@ -61,7 +63,6 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
             attenuation = 0.0;
         }
     }
-    
     
 
     //ambient
@@ -72,9 +73,10 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
     vec3 diffuse = diffuseCoefficient * surfaceColor.rgb * light.intensities;
     
     //specular
-    float specularCoefficient = 0.0;
-    specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), material.shininess);
-    vec3 specular = specularCoefficient * material.specularColor * light.intensities;
+    float specularCoefficient = 1;
+    if(material.shininess > 0)
+    	specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), material.shininess);
+    vec3 specular = specularCoefficient * surfaceColor * light.intensities;
 
     //linear color (color before gamma correction)
     return ambient + attenuation*(diffuse + specular);
@@ -86,10 +88,11 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
 	vec3 surfaceColor = vec3(texture2D(tex,fragTexCoord.xy));
+	vec3 surfaceToCamera = normalize(vec3(camPos - fragVert));
 	
 	vec3 linearColor = vec3(0);
 	for(int i = 0; i < numLights; ++i){
-	    linearColor += ApplyLight(allLights[i], surfaceColor, fragNormal, vec3(fragVert), vec3(camPos - fragVert));
+	    linearColor += ApplyLight(allLights[i], surfaceColor, fragNormal, vec3(fragVert), surfaceToCamera);
 	}
 	outputColor = vec4(linearColor,1.0f);
 }
