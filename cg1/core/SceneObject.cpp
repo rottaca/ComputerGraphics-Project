@@ -55,11 +55,27 @@ glm::mat4 SceneObject::getModelMatrix() {
 	return m_ModelMatrix;
 }
 
+void SceneObject::setMaterialAttributes(GLfloat p_shininess, glm::vec3 p_specularColor) {
+	materialAttributes.shininess = p_shininess;
+	materialAttributes.specularColor = p_specularColor;
+}
+
+void SceneObject::setSpecularColor(glm::vec3 p_specularColor) {
+	materialAttributes.specularColor = p_specularColor;
+}
+
 void SceneObject::setShininess(GLfloat p_shininess) {
-	shininess = p_shininess;
+	materialAttributes.shininess = p_shininess;
 }
 GLfloat SceneObject::getShininess() {
-	return shininess;
+	return materialAttributes.shininess;
+}
+
+SceneObject::MaterialAttributes SceneObject::getMaterialAttributes() {
+	return materialAttributes;
+}
+glm::vec3 SceneObject::getSpecularColor() {
+	return materialAttributes.specularColor;
 }
 
 }

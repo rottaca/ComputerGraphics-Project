@@ -23,8 +23,17 @@ namespace cg1 {
 
 		glm::mat4 m_ModelMatrix;
 
-		GLfloat shininess;
 	public:
+		// diffuse material color and ambient color is given by the texture
+		struct MaterialAttributes {
+		public:
+			MaterialAttributes() : shininess(1.0), specularColor(glm::vec3(1.0, 1.0, 1.0)) {}
+			virtual ~MaterialAttributes(){}
+			GLfloat shininess;
+			glm::vec3 specularColor;
+		};
+		MaterialAttributes materialAttributes;
+
 		SceneObject();
 		SceneObject(const std::string& mesh, std::initializer_list<std::string> textures);
 		~SceneObject();
@@ -39,8 +48,12 @@ namespace cg1 {
 
 		glm::mat4 getModelMatrix();
 
+		void setMaterialAttributes(GLfloat p_shininess, glm::vec3 p_specularColor);
+		void setSpecularColor(glm::vec3 p_specularColor);
 		void setShininess(GLfloat p_shininess);
+		MaterialAttributes getMaterialAttributes();
 		GLfloat getShininess();
+		glm::vec3 getSpecularColor();
 	};
 
 }
