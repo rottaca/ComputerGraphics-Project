@@ -55,4 +55,11 @@ glm::mat4 SceneObject::getModelMatrix() {
 	return m_ModelMatrix;
 }
 
+void SceneObject::setShininess(GLfloat p_shininess) {
+	shininess = p_shininess;
+}
+GLfloat SceneObject::getShininess() {
+	return shininess;
+}
+
 }

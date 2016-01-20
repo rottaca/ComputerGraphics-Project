@@ -22,6 +22,8 @@ namespace cg1 {
 		std::vector<std::unique_ptr<Texture> > m_Textures;
 
 		glm::mat4 m_ModelMatrix;
+
+		GLfloat shininess;
 	public:
 		SceneObject();
 		SceneObject(const std::string& mesh, std::initializer_list<std::string> textures);
@@ -36,6 +38,9 @@ namespace cg1 {
 		void scale(glm::vec3 factors);
 
 		glm::mat4 getModelMatrix();
+
+		void setShininess(GLfloat p_shininess);
+		GLfloat getShininess();
 	};
 
 }
