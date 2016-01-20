@@ -20,12 +20,22 @@ namespace cg1 {
 	private:
 		std::unique_ptr<Mesh> m_pMesh;
 		std::vector<std::unique_ptr<Texture> > m_Textures;
+
+		glm::mat4 m_ModelMatrix;
 	public:
 		SceneObject();
 		SceneObject(const std::string& mesh, std::initializer_list<std::string> textures);
 		~SceneObject();
 
 		void bindTexturesAndDrawMesh();
+
+		// transformations for m_pModelMatrix
+		void translate(glm::vec3 direction);
+		// anlge is in radian
+		void rotate(GLfloat angle, glm::vec3 axis = glm::vec3(0.0, 1.0, 0.0));
+		void scale(glm::vec3 factors);
+
+		glm::mat4 getModelMatrix();
 	};
 
 }

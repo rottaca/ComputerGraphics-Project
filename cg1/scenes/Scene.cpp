@@ -37,9 +37,8 @@ namespace cg1 {
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
 
         // Setup scene
-        modelMatrixTerrain_ = glm::mat4(1.0f);
-        modelMatrixWater_ = glm::translate(glm::mat4(1.0f),glm::vec3(0,-2.2,0));
-        modelMatrixStoneHenge_ = glm::translate(glm::mat4(1.0f),glm::vec3(0,3,0));
+		objWater_->translate(glm::vec3(0, -2.2, 0));
+		objStoneHenge_->translate(glm::vec3(0, 3, 0));
 
 
         // setup lights
@@ -125,22 +124,22 @@ namespace cg1 {
 
         glUniform1i(tex0UniformLocation_,0);
         glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixTerrain_));
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrixTerrain_));
+        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&objTerrain_->getModelMatrix()));
+        normalMatrix_ = glm::mat4(glm::mat3(objTerrain_->getModelMatrix()));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
         updateMaterial(0.1,glm::vec3(0.1,0.1,0.1));
         objTerrain_->bindTexturesAndDrawMesh();
 
         glUniform1i(shaderModeUniformLocation_,tShaderMode::WATER);
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixWater_));
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrixWater_));
+        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&objWater_->getModelMatrix()));
+        normalMatrix_ = glm::mat4(glm::mat3(objWater_->getModelMatrix()));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
         updateMaterial(0.5,glm::vec3(0.1,0.1,0.1));
         objWater_->bindTexturesAndDrawMesh();
 
         glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixStoneHenge_));
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrixStoneHenge_));
+        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&objStoneHenge_->getModelMatrix()));
+        normalMatrix_ = glm::mat4(glm::mat3(objStoneHenge_->getModelMatrix()));
         glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
         updateMaterial(0.1,glm::vec3(0.1,0.1,0.1));
         objStoneHenge_->bindTexturesAndDrawMesh();

@@ -95,11 +95,8 @@ namespace cg1 {
 
 
 
-        glm::mat4 modelMatrixTerrain_;
         SceneObject* objTerrain_;
-        glm::mat4 modelMatrixWater_;
         SceneObject* objWater_;
-        glm::mat4 modelMatrixStoneHenge_;
         SceneObject* objStoneHenge_;
     };
 }
