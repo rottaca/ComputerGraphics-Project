@@ -85,7 +85,7 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 // Phong lighting model
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
-	vec3 surfaceColor = vec3(texture2D(tex,fragTexCoord.xy));
+	vec3 surfaceColor = vec3(texture(tex,fragTexCoord.xy));
 	
 	vec3 linearColor = vec3(0);
 	for(int i = 0; i < numLights; ++i){
@@ -94,7 +94,7 @@ void LightShader(){
 	outputColor = vec4(linearColor,1.0f);
 }
 void emptyShader(){
-	outputColor = texture2D(tex,fragTexCoord.xy);
+	outputColor = texture(tex,fragTexCoord.xy);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
