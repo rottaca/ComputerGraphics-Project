@@ -29,10 +29,6 @@ namespace cg1 {
         void renderScene();
         void updateScene(const CG1Camera& camera, double currentTime, double elapsedTime) noexcept;
 
-        typedef enum {
-        	DEFAULT = 0,
-			WATER = 1
-        } tShaderMode;
 
         // Private member functions
     private:
@@ -84,12 +80,11 @@ namespace cg1 {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         //
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        /** Holds the normal matrix. */
-        glm::mat4 normalMatrix_;
         /** Holds the VP matrix. */
         glm::mat4 VPMatrix_;
         /* Holds the view matrix.*/
         glm::mat4 viewMatrix_;
+
         glm::vec3 camPos_;
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,14 +94,11 @@ namespace cg1 {
 
 
 
-        glm::mat4 modelMatrixTerrain_;
         SceneObject* objTerrain_;
-        glm::mat4 modelMatrixWater_;
         SceneObject* objWater_;
-        glm::mat4 modelMatrixStoneHenge_;
         SceneObject* objStoneHenge_;
 
-        std::vector<SceneObject> m_sceneObjects;
+        std::vector<SceneObject*> m_sceneObjects;
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         // Shadow Mapping

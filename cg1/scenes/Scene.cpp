@@ -20,13 +20,9 @@ namespace cg1 {
     Scene::Scene() :
         program_{ std::make_unique<GPUProgram>("ExampleProgram",
             std::initializer_list<std::string>{"sceneShader.vert", "sceneShader.frag"}) },
-        normalMatrix_{ 1.0f },
         VPMatrix_{ 1.0f },
 		viewMatrix_{1.0f},
-		currentTime_{0},
-		objTerrain_{new SceneObject("terrainSurface.obj",{"terrain_DIFFUSE.jpg"})},
-		objWater_{new SceneObject("waterSurface.obj",{"water_DIFFUSE.jpg"})},
-		objStoneHenge_{new SceneObject("Stonehengebed.obj",{"Stonehenge_texture.png"})}
+		currentTime_{0}
     {
         matModelUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matModel");
         matNormalUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matNormal");
@@ -37,9 +33,22 @@ namespace cg1 {
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
 
         // Setup scene
-        modelMatrixTerrain_ = glm::mat4(1.0f);
-        modelMatrixWater_ = glm::translate(glm::mat4(1.0f),glm::vec3(0,-2.2,0));
-        modelMatrixStoneHenge_ = glm::translate(glm::mat4(1.0f),glm::vec3(0,3,0));
+        SceneObject* objTerrain = new SceneObject("terrainSurface.obj",{"terrain_DIFFUSE.jpg"});
+        objTerrain->translate(glm::vec3(0, 0, 0));
+        objTerrain->setMaterialAttributes(100,glm::vec3(1,1,1));
+        objTerrain->setShaderMode(SceneObject::DEFAULT);
+        SceneObject* objWater = new SceneObject("waterSurface.obj",{"water_DIFFUSE.jpg"});
+        objWater->translate(glm::vec3(0, -2.2, 0));
+        objWater->setMaterialAttributes(0.5,glm::vec3(1,1,1));
+        objWater->setShaderMode(SceneObject::WATER);
+        SceneObject* objStoneHenge = new SceneObject("Stonehengebed.obj",{"Stonehenge_texture.png"});
+        objStoneHenge->translate(glm::vec3(0, 3, 0));
+        objStoneHenge->setMaterialAttributes(100,glm::vec3(1,1,1));
+        objStoneHenge->setShaderMode(SceneObject::DEFAULT);
+
+        m_sceneObjects.push_back(objTerrain);
+        m_sceneObjects.push_back(objWater);
+        m_sceneObjects.push_back(objStoneHenge);
 
 
         // setup lights
@@ -54,7 +63,7 @@ namespace cg1 {
         gLights.push_back(directionalLight);
 
         Light pointLight;
-		pointLight.position = glm::vec4(10, 1, 10, 1);
+		pointLight.position = glm::vec4(0, 5, 0, 1);
 		pointLight.intensities = glm::vec3(0.8, 0.6, 0.2); //weak yellowish light
 		pointLight.ambientCoefficient = 0;
 		pointLight.coneAngle = 360;
@@ -73,13 +82,19 @@ namespace cg1 {
 		spotlight.coneAngle = 20.0f;
 		spotlight.coneDirection = glm::vec3(0, -1, 0);
 		gLights.push_back(spotlight);
+
+		//initShadowMapping();
     }
 
     /**
      *  Destructor.
      */
     Scene::~Scene(){
-    	delete objTerrain_;
+
+    	for(int i = 0; i < m_sceneObjects.size();i++){
+    		delete m_sceneObjects.at(i);
+    	}
+    	m_sceneObjects.clear();
     }
 
     /**
@@ -129,29 +144,8 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         glUniform1i(tex0UniformLocation_,0);
-        glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixTerrain_));
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrixTerrain_));
-        glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(100,glm::vec3(1,1,1));
-        objTerrain_->bindTexturesAndDrawMesh();
 
-        glUniform1i(shaderModeUniformLocation_,tShaderMode::WATER);
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixWater_));
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrixWater_));
-        glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(.5,glm::vec3(1,1,1));
-        objWater_->bindTexturesAndDrawMesh();
-
-        glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
-        glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixStoneHenge_));
-        normalMatrix_ = glm::mat4(glm::mat3(modelMatrixStoneHenge_));
-        glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-        updateMaterial(100,glm::vec3(0.1,0.1,0.1));
-        objStoneHenge_->bindTexturesAndDrawMesh();
-
-        // TODO
-        //renderSceneObjects();
+        renderSceneObjects();
 
         glUseProgram(0);
     }
@@ -190,14 +184,15 @@ namespace cg1 {
     void Scene::renderSceneObjects()
     {
     	for(int i = 0; i < m_sceneObjects.size();i++){
-    		SceneObject& so = m_sceneObjects.at(i);
+    		SceneObject* so = m_sceneObjects.at(i);
 
-            glUniform1i(shaderModeUniformLocation_,tShaderMode::DEFAULT);
-            glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&modelMatrixStoneHenge_));
-            normalMatrix_ = glm::mat4(glm::mat3(modelMatrixStoneHenge_));
-            glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix_));
-            updateMaterial(100,glm::vec3(0.1,0.1,0.1));
-            so.bindTexturesAndDrawMesh();
+            glUniform1i(shaderModeUniformLocation_, so->getShaderMode());
+            glm::mat4 mm = so->getModelMatrix();
+            glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&mm));
+            glm::mat4 normalMatrix = glm::mat4(glm::mat3(mm));
+            glUniformMatrix4fv(matNormalUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&normalMatrix));
+            updateMaterial(so->getShininess(),so->getSpecularColor());
+            so->bindTexturesAndDrawMesh();
     	}
     }
     void Scene::initShadowMapping()
