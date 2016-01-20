@@ -71,6 +71,7 @@ namespace cg1 {
         GLint matNormalUniformLocation_;
         /** Holds uniform name for the view-projection matrix. */
         GLint matVPUniformLocation_;
+        GLint matVPDepthUniformLocation_;
         GLint cameraPosUniformLocation_;
 
         GLint tex0UniformLocation_;
@@ -98,9 +99,7 @@ namespace cg1 {
 
 
 
-        SceneObject* objTerrain_;
-        SceneObject* objWater_;
-        SceneObject* objStoneHenge_;
+        SceneObject* objPlane_;
 
         std::vector<SceneObject*> m_sceneObjects;
 

@@ -37,6 +37,7 @@ uniform vec3 camPos;
 in vec3 fragNormal;
 in vec2 fragTexCoord;
 in vec3 fragVertWorld;
+in vec3 fragVertShadowClip;
 flat in int shaderMode_;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +90,6 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
 	vec3 surfaceColor = vec3(texture(tex,fragTexCoord.xy));
-	//vec3 surfaceColor = vec3(texture(depthTex,gl_FragCoord.xy));
 	vec3 surfaceToCamera = normalize(vec3(camPos - fragVertWorld));
 	
 	vec3 linearColor = vec3(0);
@@ -98,12 +98,32 @@ void LightShader(){
 	}
 	outputColor = vec4(linearColor,1.0f);
 }
+
+bool isShadowed(vec3 surfaceToLight)
+{ 
+	float cosTheta = clamp(dot(fragNormal, surfaceToLight),0,1);
+	float bias = 0.005*cosTheta;
+	bias = clamp(bias, 0,0.01);
+	return texture( depthTex, fragVertShadowClip.xy ).x  <  fragVertShadowClip.z -bias;
+}
 void emptyShader(){
-	outputColor = texture(tex,fragTexCoord.xy);
+
+	float visibility = 1.0;
+	
+	if ( isShadowed(normalize(allLights[0].position.xyz))){
+		visibility = 0.5;
+ 	}
+ 	
+	outputColor = visibility*texture(tex,fragTexCoord.xy);
+	
+	// Invalid coordinates, no shadow data here
+	if(fragVertShadowClip.y < 0 ||fragVertShadowClip.y > 1 || fragVertShadowClip.x < 0 ||fragVertShadowClip.x > 1)
+		outputColor = vec4(1,0,0,1);
+
 }
 
 void depthDisplayShader(){
-	float z = texture2D(depthTex,vec2(gl_FragCoord.x/1280,gl_FragCoord.y/720)).x;
+	float z = texture(depthTex,fragTexCoord.xy).x;
 		
 	float n = 1.0;                                // the near plane
 	float f = 100.0;                               // the far plane
@@ -120,7 +140,7 @@ void main()
 	switch(shaderMode_){
 		case 0:
 		case 1:
-			depthDisplayShader();
+			emptyShader();
 			break;
 		case 4:
 		case 5:
@@ -128,6 +148,6 @@ void main()
 			break;
 	
 		default:
-			LightShader();
+			emptyShader();
 	}
 }

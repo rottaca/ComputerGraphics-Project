@@ -33,6 +33,7 @@ namespace cg1 {
         shaderModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shaderMode");
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
         depthTextureUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "depthTex");
+        matVPDepthUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matDepthVP");
 
         // Setup scene
         SceneObject* objTerrain = new SceneObject("terrainSurface.obj",{"terrain_DIFFUSE.jpg"});
@@ -48,14 +49,17 @@ namespace cg1 {
         objStoneHenge->setMaterialAttributes(100,glm::vec3(1,1,1));
         objStoneHenge->setShaderMode(SceneObject::DEFAULT);
 
+        objPlane_ = new SceneObject("Plane.obj",{});
+
         m_sceneObjects.push_back(objTerrain);
         m_sceneObjects.push_back(objWater);
         m_sceneObjects.push_back(objStoneHenge);
 
 
+
         // setup lights
         Light directionalLight;
-        directionalLight.position = glm::vec4(100, 100, 0, 0); //w == 0 indications a directional light
+        directionalLight.position = glm::vec4(10, 10, 0, 0); //w == 0 indications a directional light
         directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
         //directionalLight.intensities = glm::vec3(0.2,0.2,0.2); //white light
         directionalLight.ambientCoefficient = 0.1;
@@ -131,7 +135,6 @@ namespace cg1 {
         // Update general uniforms
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         glUniform3fv(cameraPosUniformLocation_, 1, reinterpret_cast<GLfloat*>(&camPos_));
-        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&VPMatrix_));
 
         // Update Light
         updateLight();
@@ -151,7 +154,6 @@ namespace cg1 {
         // Shadow mapping: Render to depth buffer
         renderDepthImage();
 
-        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&VPMatrix_));
         renderRealImage();
 
         glUseProgram(0);
@@ -254,15 +256,20 @@ namespace cg1 {
     void Scene::renderDepthImage()
     {
     	// Calculate light view projection matrix
-    	// TODO
-//    	glm::mat4 depthPMatrix = glm::ortho<float>(-10,10,-10,10,-10,20);
-//    	glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(0).position), glm::vec3(0,0,0), glm::vec3(0,1,0));
-//    	glm::mat4 depthVPMatrix = depthPMatrix*depthVMatrix;
-//
-//    	std::cout<<glm::to_string(depthPMatrix)<<std::endl;
-//    	std::cout<<glm::to_string(depthVMatrix)<<std::endl;
-//
-//        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthVPMatrix));
+    	glm::mat4 depthPMatrix = glm::mat4(1.0f);
+
+    	if(gLights.at(0).position.w == 0)
+    		depthPMatrix = glm::ortho<float>(-10,10,-10,10,-10,20);
+    	else
+    	{
+    		// TODO
+			std::cout << "invalid light source" << std::endl;
+    	}
+
+    	glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(0).position), glm::vec3(0,0,0), glm::vec3(0,1,0));
+    	glm::mat4 depthVPMatrix = depthPMatrix*depthVMatrix;
+
+        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthVPMatrix));
 
     	// Switch buffer to depth buffer
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferId_.at(0));
@@ -278,6 +285,31 @@ namespace cg1 {
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0 + 1);
 		glBindTexture(GL_TEXTURE_2D, depthTextureId_.at(0));
+
+        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&VPMatrix_));
+		glm::mat4 depthPMatrix = glm::mat4(1.0f);
+
+		if (gLights.at(0).position.w == 0)
+			depthPMatrix = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+		else {
+			// TODO
+			std::cout << "invalid light source" << std::endl;
+		}
+
+		glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(0).position),	glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		glm::mat4 depthVPMatrix = depthPMatrix * depthVMatrix;
+		glm::mat4 biasMatrix(
+		 0.5, 0.0, 0.0, 0.0,
+		 0.0, 0.5, 0.0, 0.0,
+		 0.0, 0.0, 0.5, 0.0,
+		 0.5, 0.5, 0.5, 1.0
+		 );
+
+		 glm::mat4 depthBiasMVP = biasMatrix*depthVPMatrix;
+
+        glUniformMatrix4fv(matVPDepthUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthBiasMVP));
+
         renderSceneObjects();
+
     }
 }
