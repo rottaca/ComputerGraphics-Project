@@ -1,17 +1,17 @@
 #version 330
+#extension GL_EXT_texture_array : enable
 
+#define MAX_LIGHTS 10
 /////////////////////////////////////////////////////////////////////////////
 // Uniforms
 /////////////////////////////////////////////////////////////////////////////
-uniform sampler2D tex;
-uniform sampler2D depthTex;
+uniform sampler2D tex;	// Diffuse texture
 
 /////////////////////////////////////////////////////////////////////////////
 // Light
 // Source: http://www.tomdalling.com/blog/modern-opengl/08-even-more-lighting-directional-lights-spotlights-multiple-lights/
 /////////////////////////////////////////////////////////////////////////////
 // array of lights
-#define MAX_LIGHTS 10
 uniform int numLights;
 uniform struct Light {
    vec4 position;
@@ -30,6 +30,12 @@ uniform struct Material{
 } material;
 uniform vec3 camPos;
 
+/////////////////////////////////////////////////////////////////////////////
+// Shadow Mapping
+/////////////////////////////////////////////////////////////////////////////
+uniform int enableShadowMapping;	// 0: disabled, 1:enabled
+uniform sampler2DArray shadowTexArray;
+in vec3 fragVertShadowClip[MAX_LIGHTS];
 
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
@@ -37,16 +43,25 @@ uniform vec3 camPos;
 in vec3 fragNormal;
 in vec2 fragTexCoord;
 in vec3 fragVertWorld;
-in vec3 fragVertShadowClip;
-flat in int shaderMode_;
+uniform int shaderMode;
 
 /////////////////////////////////////////////////////////////////////////////
 // Output
 /////////////////////////////////////////////////////////////////////////////
 out vec4 outputColor;
 
+bool isShadowed(int lightNr, vec3 surfaceToLight)
+{ 
+	float cosTheta = clamp(dot(fragNormal, surfaceToLight),0,1);
+	float bias = 0.005*cosTheta;
+	bias = clamp(bias, 0.0,0.01);
+	return texture2DArray( shadowTexArray, vec3(fragVertShadowClip[lightNr].xy, lightNr) ).x  <  fragVertShadowClip[lightNr].z - bias;
+}
+
 // Applies the specified light
-vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, vec3 surfaceToCamera) {
+vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, vec3 surfaceToCamera) {
+	Light light = allLights[lightNr];
+	
     vec3 surfaceToLight;
     float attenuation = 1.0;
     if(light.position.w == 0.0) {
@@ -65,7 +80,6 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
             attenuation = 0.0;
         }
     }
-    
 
     //ambient
     vec3 ambient = light.ambientCoefficient * surfaceColor.rgb * light.intensities;
@@ -80,13 +94,26 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
     	specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), material.shininess);
     vec3 specular = specularCoefficient * surfaceColor * light.intensities;
 
-    //linear color (color before gamma correction)
-    return ambient + attenuation*(diffuse + specular);
+	// Shadow Mapping
+	float visibility = 1.0;
+	
+	if (enableShadowMapping == 1 && isShadowed(lightNr, surfaceToLight)){
+		visibility = 0.1;
+		
+		// Error output for unshadowed regions
+ 		if(fragVertShadowClip[lightNr].y < 0 ||fragVertShadowClip[lightNr].y > 1 || 
+ 		   fragVertShadowClip[lightNr].x < 0 ||fragVertShadowClip[lightNr].x > 1 || 
+ 		   fragVertShadowClip[lightNr].z < 0 ||fragVertShadowClip[lightNr].z > 1)
+			return vec3(1,0,0);
+ 	}
+		
+    // inear color (color before gamma correction)
+    return ambient + visibility*attenuation*(diffuse + specular);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Phong lighting model
+// Phong lighting model + shadow mapping
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
 	vec3 surfaceColor = vec3(texture(tex,fragTexCoord.xy));
@@ -94,42 +121,14 @@ void LightShader(){
 	
 	vec3 linearColor = vec3(0);
 	for(int i = 0; i < numLights; ++i){
-	    linearColor += ApplyLight(allLights[i], surfaceColor, fragNormal, vec3(fragVertWorld), surfaceToCamera);
+	    linearColor += ApplyLight(i, surfaceColor, fragNormal, vec3(fragVertWorld), surfaceToCamera);
 	}
 	outputColor = vec4(linearColor,1.0f);
 }
 
-bool isShadowed(vec3 surfaceToLight)
-{ 
-	float cosTheta = clamp(dot(fragNormal, surfaceToLight),0,1);
-	float bias = 0.005*cosTheta;
-	bias = clamp(bias, 0,0.01);
-	return texture( depthTex, fragVertShadowClip.xy ).x  <  fragVertShadowClip.z -bias;
-}
+
 void emptyShader(){
-
-	float visibility = 1.0;
-	
-	if ( isShadowed(normalize(allLights[0].position.xyz))){
-		visibility = 0.5;
- 	}
- 	
-	outputColor = visibility*texture(tex,fragTexCoord.xy);
-	
-	// Invalid coordinates, no shadow data here
-	if(fragVertShadowClip.y < 0 ||fragVertShadowClip.y > 1 || fragVertShadowClip.x < 0 ||fragVertShadowClip.x > 1)
-		outputColor = vec4(1,0,0,1);
-
-}
-
-void depthDisplayShader(){
-	float z = texture(depthTex,fragTexCoord.xy).x;
-		
-	float n = 1.0;                                // the near plane
-	float f = 100.0;                               // the far plane
-	float c = (2.0 * n) / (f + n - z * (f - n));  // convert to linear values
-	
-	outputColor = vec4(c,c,c,1);
+	outputColor = texture(tex,fragTexCoord.xy);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,10 +136,10 @@ void depthDisplayShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
-	switch(shaderMode_){
+	switch(shaderMode){
 		case 0:
 		case 1:
-			emptyShader();
+			LightShader();
 			break;
 		case 4:
 		case 5:

@@ -42,6 +42,9 @@ namespace cg1 {
         void initShadowMapping();
         void renderDepthImage();
         void renderRealImage();
+        glm::mat4 calculateDepthVPMat(int lightIdx);
+
+        void enableShadowMapping(bool enable);
 
         // Private member variables
     private:
@@ -71,7 +74,6 @@ namespace cg1 {
         GLint matNormalUniformLocation_;
         /** Holds uniform name for the view-projection matrix. */
         GLint matVPUniformLocation_;
-        GLint matVPDepthUniformLocation_;
         GLint cameraPosUniformLocation_;
 
         GLint tex0UniformLocation_;
@@ -107,9 +109,11 @@ namespace cg1 {
         // Shadow Mapping
         // Source: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
         /////////////////////////////////////////////////////////////////////////////////////////////////////
+        bool shadowMappingEnabled_;
         std::vector<GLuint> frameBufferId_;
-        std::vector<GLuint> depthTextureId_;
-        GLuint depthTextureUniformLocation_;
+        GLuint depthTextureArrayId_;
+        GLuint depthTextureArrayUniformLocation_;
+        GLint enableShadowMappingUniformLocation_;
 
 
     };

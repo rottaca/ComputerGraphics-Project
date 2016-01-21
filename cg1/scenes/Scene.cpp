@@ -32,8 +32,8 @@ namespace cg1 {
         cameraPosUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "camPos");
         shaderModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shaderMode");
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
-        depthTextureUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "depthTex");
-        matVPDepthUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matDepthVP");
+        depthTextureArrayUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shadowTexArray");
+        enableShadowMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableShadowMapping");
 
         // Setup scene
         SceneObject* objTerrain = new SceneObject("terrainSurface.obj",{"terrain_DIFFUSE.jpg"});
@@ -59,7 +59,7 @@ namespace cg1 {
 
         // setup lights
         Light directionalLight;
-        directionalLight.position = glm::vec4(10, 10, 0, 0); //w == 0 indications a directional light
+        directionalLight.position = glm::vec4(10, 5, 5, 0); //w == 0 indications a directional light
         directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
         //directionalLight.intensities = glm::vec3(0.2,0.2,0.2); //white light
         directionalLight.ambientCoefficient = 0.1;
@@ -67,6 +67,15 @@ namespace cg1 {
         directionalLight.att_c2 = 0;
         directionalLight.att_c3 = 0;
         gLights.push_back(directionalLight);
+
+//        Light directionalLight2;
+//        directionalLight2.position = glm::vec4(0, 10, 5, 0); //w == 0 indications a directional light
+//        directionalLight2.intensities = glm::vec3(0.2,0.2,1); //white light
+//        directionalLight2.ambientCoefficient = 0.1;
+//        directionalLight2.att_c1 = 0;
+//        directionalLight2.att_c2 = 0;
+//        directionalLight2.att_c3 = 0;
+//        gLights.push_back(directionalLight2);
 //
 //        Light pointLight;
 //		pointLight.position = glm::vec4(0, 5, 0, 1);
@@ -136,6 +145,8 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         glUniform3fv(cameraPosUniformLocation_, 1, reinterpret_cast<GLfloat*>(&camPos_));
 
+        //gLights.at(0).position = glm::rotateZ(gLights.at(0).position,0.001f);
+
         // Update Light
         updateLight();
 
@@ -149,10 +160,13 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         glUniform1i(tex0UniformLocation_,0);
-        glUniform1i(depthTextureUniformLocation_,1);
+        glUniform1i(depthTextureArrayUniformLocation_,1);
 
-        // Shadow mapping: Render to depth buffer
-        renderDepthImage();
+        enableShadowMapping(true);
+
+        if(shadowMappingEnabled_)
+        	// Shadow mapping: Render to depth buffer
+        	renderDepthImage();
 
         renderRealImage();
 
@@ -218,30 +232,32 @@ namespace cg1 {
     }
     void Scene::initShadowMapping()
     {
-    	GLuint fbId, dtId;
+    	GLuint fbId;
+    	// Generate texture array
+		glGenTextures(1, &depthTextureArrayId_);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, depthTextureArrayId_);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, config::windowWidth, config::windowHeight, gLights.size());
+
     	for(int i = 0; i < gLights.size(); i++){
 			// Setup buffer to render depth image
 			glGenFramebuffers(1, &fbId);
-			glGenTextures(1, &dtId);
 
 			// Depth texture. Texture that contains the rendered depth image
-			glBindTexture(GL_TEXTURE_2D, dtId);
-			glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT24, config::windowWidth, config::windowHeight, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+			glTexImage2D(GL_TEXTURE_2D_ARRAY, i, GL_DEPTH_COMPONENT24, config::windowWidth, config::windowHeight, gLights.size(), GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
 
 			// Attach a depth buffer (our texture) to the framebuffer
 			glBindFramebuffer(GL_FRAMEBUFFER, fbId);
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, dtId, 0);
+			glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTextureArrayId_, 0, i);		// Attach texture i of texture array to framebuffer
 			glDrawBuffer(GL_NONE); // No color buffer is drawn to.
 			glReadBuffer(GL_NONE);
 
 			frameBufferId_.push_back(fbId);
-			depthTextureId_.push_back(dtId);
 
 			if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
 				std::cout << "Framebuffer not complete because of Error!" << std::endl;
@@ -255,28 +271,22 @@ namespace cg1 {
 
     void Scene::renderDepthImage()
     {
-    	// Calculate light view projection matrix
-    	glm::mat4 depthPMatrix = glm::mat4(1.0f);
+		for(int i = 0; i < gLights.size(); i++){
 
-    	if(gLights.at(0).position.w == 0)
-    		depthPMatrix = glm::ortho<float>(-10,10,-10,10,-10,20);
-    	else
-    	{
-    		// TODO
-			std::cout << "invalid light source" << std::endl;
-    	}
+			glm::mat4 depthVPMatrix = calculateDepthVPMat(i);
+			std::ostringstream ss;
+			ss << "matDepthVP[" << i << "]";
 
-    	glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(0).position), glm::vec3(0,0,0), glm::vec3(0,1,0));
-    	glm::mat4 depthVPMatrix = depthPMatrix*depthVMatrix;
+			glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthVPMatrix));
 
-        glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthVPMatrix));
+			// Switch buffer to depth buffer
+			glBindFramebuffer(GL_FRAMEBUFFER, frameBufferId_.at(i));
+			glViewport(0,0, config::windowWidth, config::windowHeight);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			// Render scene into that buffer
+			renderSceneObjects(true);
+		}
 
-    	// Switch buffer to depth buffer
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBufferId_.at(0));
-    	glViewport(0,0, config::windowWidth, config::windowHeight);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		// Render scene into that buffer
-        renderSceneObjects(true);
     }
     void Scene::renderRealImage()
     {
@@ -284,32 +294,54 @@ namespace cg1 {
     	glViewport(0,0, config::windowWidth, config::windowHeight);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, depthTextureId_.at(0));
+		glBindTexture(GL_TEXTURE_2D_ARRAY, depthTextureArrayId_);
 
         glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&VPMatrix_));
-		glm::mat4 depthPMatrix = glm::mat4(1.0f);
+
+        if(shadowMappingEnabled_){
+			for(int i = 0; i < gLights.size(); i++){
+				glm::mat4 depthVPMatrix = calculateDepthVPMat(i);
+				glm::mat4 biasMatrix(
+				 0.5, 0.0, 0.0, 0.0,
+				 0.0, 0.5, 0.0, 0.0,
+				 0.0, 0.0, 0.5, 0.0,
+				 0.5, 0.5, 0.5, 1.0
+				 );
+
+				 glm::mat4 depthBiasMVP = biasMatrix*depthVPMatrix;
+
+				std::ostringstream ss;
+				ss << "matDepthVP[" << i << "]";
+
+				glUniformMatrix4fv(glGetUniformLocation(program_->getProgramId(), ss.str().c_str()), 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthBiasMVP));
+			}
+        }
+    	//objPlane_->bindTexturesAndDrawMesh();
+        renderSceneObjects();
+
+    }
+    void Scene::enableShadowMapping(bool enable)
+    {
+        glUniform1i(enableShadowMappingUniformLocation_, enable?1:0);
+        shadowMappingEnabled_ = enable;
+    }
+    glm::mat4 Scene::calculateDepthVPMat(int lightIdx)
+    {
+    	glm::mat4 depthPMatrix = glm::mat4(1.0f);
 
 		if (gLights.at(0).position.w == 0)
-			depthPMatrix = glm::ortho<float>(-10, 10, -10, 10, -10, 20);
+			depthPMatrix = glm::ortho<float>(-20, 20, -20, 20, -20, 50);
 		else {
 			// TODO
 			std::cout << "invalid light source" << std::endl;
 		}
+		glm::vec3 lookAt = glm::vec3(0, 0, 0);
+		// TODO
 
-		glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(0).position),	glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(lightIdx).position),
+				lookAt, glm::vec3(0, 1, 0));
 		glm::mat4 depthVPMatrix = depthPMatrix * depthVMatrix;
-		glm::mat4 biasMatrix(
-		 0.5, 0.0, 0.0, 0.0,
-		 0.0, 0.5, 0.0, 0.0,
-		 0.0, 0.0, 0.5, 0.0,
-		 0.5, 0.5, 0.5, 1.0
-		 );
-
-		 glm::mat4 depthBiasMVP = biasMatrix*depthVPMatrix;
-
-        glUniformMatrix4fv(matVPDepthUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&depthBiasMVP));
-
-        renderSceneObjects();
+		return depthVPMatrix;
 
     }
 }

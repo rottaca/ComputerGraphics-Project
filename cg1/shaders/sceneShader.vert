@@ -1,5 +1,6 @@
 #version 330
 
+
 /////////////////////////////////////////////////////////////////////////////
 // Attributes
 /////////////////////////////////////////////////////////////////////////////
@@ -13,7 +14,6 @@ layout(location = 2) in vec2 texCoord;
 uniform mat4 matModel;
 uniform mat4 matNormal;
 uniform mat4 matVP;
-uniform mat4 matDepthVP;
 
 uniform float time;
 uniform int shaderMode;
@@ -24,8 +24,16 @@ uniform int shaderMode;
 out vec3 fragNormal;
 out vec2 fragTexCoord;
 out vec3 fragVertWorld;
-out vec3 fragVertShadowClip;
-flat out int shaderMode_;
+
+/////////////////////////////////////////////////////////////////////////////
+// ShadowMapping
+/////////////////////////////////////////////////////////////////////////////
+uniform int enableShadowMapping;	// 0: disabled, 1:enabled
+#define MAX_LIGHTS 10
+uniform mat4 matDepthVP[MAX_LIGHTS];
+out vec3 fragVertShadowClip[MAX_LIGHTS];
+uniform int numLights;
+
 
 struct waveData{
 	float amplitude;
@@ -43,10 +51,14 @@ void emptyShader(){
     fragTexCoord = texCoord;
     fragNormal = mat3(matNormal) * normal;
     fragVertWorld = vec3(matModel*position);
-    vec4 shCoord = (matDepthVP * matModel * position);
-    fragVertShadowClip = vec3(shCoord);
     gl_Position = matVP * matModel* position;
-
+    
+    if(enableShadowMapping == 1){
+	    for(int i = 0; i < numLights; i++){
+		    vec4 shCoord = (matDepthVP[i] * matModel * position);
+		    fragVertShadowClip[i] = vec3(shCoord);
+	    }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,8 +99,6 @@ void waterShader(){
     fragTexCoord = texCoord;
     fragNormal = mat3(matNormal) * normal;
     fragVertWorld = vec3(matModel*position);
-    vec4 shCoord = (matDepthVP * matModel * position);
-    fragVertShadowClip = vec3(shCoord) / shCoord.w;
 
 	vec4 pos = position;
 	
@@ -134,6 +144,14 @@ void waterShader(){
 	
     fragNormal = normalize(mat3(matNormal)*n);
     gl_Position = matVP * matModel* pos;
+    
+   
+    if(enableShadowMapping == 1){
+	    for(int i = 0; i < numLights; i++){
+		    vec4 shCoord = (matDepthVP[i] * matModel * pos);
+		    fragVertShadowClip[i] = vec3(shCoord);
+	    }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -141,8 +159,6 @@ void waterShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
-	shaderMode_ = shaderMode;
-
 	switch(shaderMode){
 		case 1:
 		case 5:
