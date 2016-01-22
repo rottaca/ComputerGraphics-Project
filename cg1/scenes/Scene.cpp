@@ -58,6 +58,7 @@ namespace cg1 {
 
 
         // setup lights
+        // Sun
         Light directionalLight;
         directionalLight.position = glm::vec4(10, 5, 5, 0); //w == 0 indications a directional light
         directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
@@ -68,15 +69,16 @@ namespace cg1 {
         directionalLight.att_c3 = 0;
         gLights.push_back(directionalLight);
 
-//        Light directionalLight2;
-//        directionalLight2.position = glm::vec4(0, 10, 5, 0); //w == 0 indications a directional light
-//        directionalLight2.intensities = glm::vec3(0.2,0.2,1); //white light
-//        directionalLight2.ambientCoefficient = 0.1;
-//        directionalLight2.att_c1 = 0;
-//        directionalLight2.att_c2 = 0;
-//        directionalLight2.att_c3 = 0;
-//        gLights.push_back(directionalLight2);
-//
+        // Moon
+        Light directionalLight2;
+        directionalLight2.position = glm::vec4(-10, -5, 5, 0); //w == 0 indications a directional light
+        directionalLight2.intensities = glm::vec3(192,192,240)/255*0.2; //white light
+        directionalLight2.ambientCoefficient = 0.1;
+        directionalLight2.att_c1 = 0;
+        directionalLight2.att_c2 = 0;
+        directionalLight2.att_c3 = 0;
+        gLights.push_back(directionalLight2);
+
 //        Light pointLight;
 //		pointLight.position = glm::vec4(0, 5, 0, 1);
 //		pointLight.intensities = glm::vec3(0.8, 0.6, 0.2); //weak yellowish light
@@ -87,16 +89,16 @@ namespace cg1 {
 //		pointLight.att_c3 = 0.1f;
 //		gLights.push_back(pointLight);
 //
-//		Light spotlight;
-//		spotlight.position = glm::vec4(0, 7, 0, 1);
-//		spotlight.intensities = glm::vec3(2, 2, 2); //strong white light
-//		spotlight.att_c1 = 0;
-//		spotlight.att_c2 = 0;
-//		spotlight.att_c3 = 0.1f;
-//		spotlight.ambientCoefficient = 0; //no ambient light
-//		spotlight.coneAngle = 20.0f;
-//		spotlight.coneDirection = glm::vec3(0, -1, 0);
-//		gLights.push_back(spotlight);
+		Light spotlight;
+		spotlight.position = glm::vec4(0, 7, -10, 1);
+		spotlight.intensities = glm::vec3(2, 2, 2); //strong white light
+		spotlight.att_c1 = 0;
+		spotlight.att_c2 = 0;
+		spotlight.att_c3 = 0.1f;
+		spotlight.ambientCoefficient = 0; //no ambient light
+		spotlight.coneAngle = 20.0f;
+		spotlight.coneDirection = glm::vec3(0, -0.5, 1);
+		gLights.push_back(spotlight);
 
 		initShadowMapping();
     }
@@ -135,7 +137,8 @@ namespace cg1 {
             ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiSetCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiSetCond_FirstUseEver);
             ImGui::Begin("Render Parameters");
-            ImGui::Text("Hello World");
+            ImGui::Checkbox("Enable Shadowmapping",&shadowMappingEnabled_);
+            ImGui::Checkbox("Enable Water",&enableWater_);
             ImGui::End();
         }
 
@@ -145,7 +148,9 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         glUniform3fv(cameraPosUniformLocation_, 1, reinterpret_cast<GLfloat*>(&camPos_));
 
-        //gLights.at(0).position = glm::rotateZ(gLights.at(0).position,0.001f);
+
+        gLights.at(0).position = glm::rotateZ(gLights.at(0).position,0.001f);
+        gLights.at(1).position = glm::rotateZ(gLights.at(1).position,0.001f);
 
         // Update Light
         updateLight();
@@ -162,7 +167,7 @@ namespace cg1 {
         glUniform1i(tex0UniformLocation_,0);
         glUniform1i(depthTextureArrayUniformLocation_,1);
 
-        enableShadowMapping(true);
+        enableShadowMapping(shadowMappingEnabled_);
 
         if(shadowMappingEnabled_)
         	// Shadow mapping: Render to depth buffer
@@ -221,6 +226,17 @@ namespace cg1 {
 				default:break;
 				}
     		}
+
+    		if(!enableWater_){
+    			switch (mode) {
+				case SceneObject::tShaderMode::WATER:
+				case SceneObject::tShaderMode::WATER_DEPTH:
+					mode = SceneObject::tShaderMode::DEFAULT;
+					break;
+				default:break;
+				}
+    		}
+
             glUniform1i(shaderModeUniformLocation_, mode);
             glm::mat4 mm = so->getModelMatrix();
             glUniformMatrix4fv(matModelUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&mm));
@@ -328,18 +344,22 @@ namespace cg1 {
     glm::mat4 Scene::calculateDepthVPMat(int lightIdx)
     {
     	glm::mat4 depthPMatrix = glm::mat4(1.0f);
-
-		if (gLights.at(0).position.w == 0)
+		glm::vec3 lookAt = glm::vec3(0, 0, 0);
+		// Directional
+		if (gLights.at(lightIdx).position.w == 0){
 			depthPMatrix = glm::ortho<float>(-20, 20, -20, 20, -20, 50);
+		}
+		// Spot light
+		else if (gLights.at(lightIdx).coneAngle < 180) {
+			depthPMatrix = glm::perspective<float>(gLights.at(lightIdx).coneAngle,1,1,50);
+			lookAt = glm::vec3(gLights.at(lightIdx).position) + gLights.at(lightIdx).coneDirection;
+		}
+		// Point light
 		else {
-			// TODO
 			std::cout << "invalid light source" << std::endl;
 		}
-		glm::vec3 lookAt = glm::vec3(0, 0, 0);
-		// TODO
 
-		glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(lightIdx).position),
-				lookAt, glm::vec3(0, 1, 0));
+		glm::mat4 depthVMatrix = glm::lookAt(glm::vec3(gLights.at(lightIdx).position), lookAt, glm::vec3(0, 1, 0));
 		glm::mat4 depthVPMatrix = depthPMatrix * depthVMatrix;
 		return depthVPMatrix;
 

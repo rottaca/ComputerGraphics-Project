@@ -35,7 +35,7 @@ uniform vec3 camPos;
 /////////////////////////////////////////////////////////////////////////////
 uniform int enableShadowMapping;	// 0: disabled, 1:enabled
 uniform sampler2DArray shadowTexArray;
-in vec3 fragVertShadowClip[MAX_LIGHTS];
+in vec4 fragVertShadowClip[MAX_LIGHTS];
 
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
@@ -55,7 +55,13 @@ bool isShadowed(int lightNr, vec3 surfaceToLight)
 	float cosTheta = clamp(dot(fragNormal, surfaceToLight),0,1);
 	float bias = 0.005*cosTheta;
 	bias = clamp(bias, 0.0,0.01);
-	return texture2DArray( shadowTexArray, vec3(fragVertShadowClip[lightNr].xy, lightNr) ).x  <  fragVertShadowClip[lightNr].z - bias;
+	
+	if(allLights[lightNr].position.w == 0)
+		return texture2DArray( shadowTexArray, vec3(fragVertShadowClip[lightNr].xy, lightNr) ).x  <  fragVertShadowClip[lightNr].z - bias;
+	// Perspecive devision for spot light
+	else if(allLights[lightNr].coneAngle <180)
+		return texture2DArray( shadowTexArray, vec3(fragVertShadowClip[lightNr].xy/fragVertShadowClip[lightNr].w, lightNr) ).x  <  (fragVertShadowClip[lightNr].z - bias)/fragVertShadowClip[lightNr].w;
+	
 }
 
 // Applies the specified light
@@ -101,14 +107,21 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 		visibility = 0.1;
 		
 		// Error output for unshadowed regions
- 		if(fragVertShadowClip[lightNr].y < 0 ||fragVertShadowClip[lightNr].y > 1 || 
- 		   fragVertShadowClip[lightNr].x < 0 ||fragVertShadowClip[lightNr].x > 1 || 
- 		   fragVertShadowClip[lightNr].z < 0 ||fragVertShadowClip[lightNr].z > 1)
-			return vec3(1,0,0);
+ 		//if(fragVertShadowClip[lightNr].y < 0 ||fragVertShadowClip[lightNr].y > 1 || 
+ 		//   fragVertShadowClip[lightNr].x < 0 ||fragVertShadowClip[lightNr].x > 1 || 
+ 		//   fragVertShadowClip[lightNr].z < 0 ||fragVertShadowClip[lightNr].z > 1)
+		//	return vec3(1,0,0);
  	}
-		
-    // inear color (color before gamma correction)
-    return ambient + visibility*attenuation*(diffuse + specular);
+ 	// Sun/Moon
+ 	float intensity = 1.0;
+ 	if(lightNr == 0 || lightNr == 1)
+ 	{
+ 		intensity = max(0,surfaceToLight.y);
+ 	}
+ 	
+	
+    // linear color (color before gamma correction)
+    return ambient + intensity*visibility*attenuation*(diffuse + specular);
 }
 
 

@@ -31,7 +31,7 @@ out vec3 fragVertWorld;
 uniform int enableShadowMapping;	// 0: disabled, 1:enabled
 #define MAX_LIGHTS 10
 uniform mat4 matDepthVP[MAX_LIGHTS];
-out vec3 fragVertShadowClip[MAX_LIGHTS];
+out vec4 fragVertShadowClip[MAX_LIGHTS];
 uniform int numLights;
 
 
@@ -55,8 +55,7 @@ void emptyShader(){
     
     if(enableShadowMapping == 1){
 	    for(int i = 0; i < numLights; i++){
-		    vec4 shCoord = (matDepthVP[i] * matModel * position);
-		    fragVertShadowClip[i] = vec3(shCoord);
+		    fragVertShadowClip[i] = matDepthVP[i] * matModel * position;
 	    }
     }
 }
@@ -148,8 +147,7 @@ void waterShader(){
    
     if(enableShadowMapping == 1){
 	    for(int i = 0; i < numLights; i++){
-		    vec4 shCoord = (matDepthVP[i] * matModel * pos);
-		    fragVertShadowClip[i] = vec3(shCoord);
+		    fragVertShadowClip[i] = matDepthVP[i] * matModel * pos;
 	    }
     }
 }
