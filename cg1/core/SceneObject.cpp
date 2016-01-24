@@ -8,6 +8,8 @@
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <iostream>
+
 namespace cg1{
 
 
@@ -24,7 +26,9 @@ SceneObject::~SceneObject()
 SceneObject::SceneObject(const std::string& mesh, std::initializer_list<std::string> textures) : m_ModelMatrix(glm::mat4(1.0)){
 	m_pMesh = std::make_unique<Mesh>(PATH_MESHES + "/" + mesh);
 	for (std::initializer_list<std::string>::iterator it = textures.begin(); it != textures.end(); ++it) {
+		std::cout << "Loading texture " << *it << " ...";
 		m_Textures.push_back(std::make_unique<Texture>(PATH_TEXTURES + "/" + *it));
+		std::cout << "Done." << std::endl;
 	}
 	m_shaderMode = tShaderMode::DEFAULT;
 }
@@ -41,6 +45,10 @@ void SceneObject::bindTexturesAndDrawMesh() {
 	m_pMesh->DrawComplete();
 }
 
+void SceneObject::setTransformation(glm::vec3 T, glm::vec3 RAxis, float angle, glm::vec3 S)
+{
+	m_ModelMatrix = glm::translate(glm::mat4(1.0f), T)*glm::rotate(glm::mat4(1.0f), angle, RAxis)*glm::scale(glm::mat4(1.0f),S);
+}
 void SceneObject::translate(glm::vec3 direction) {
 	m_ModelMatrix = glm::translate(m_ModelMatrix, direction);
 }

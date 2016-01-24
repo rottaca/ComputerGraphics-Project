@@ -12,6 +12,7 @@ uniform sampler2D tex;	// Diffuse texture
 // Source: http://www.tomdalling.com/blog/modern-opengl/08-even-more-lighting-directional-lights-spotlights-multiple-lights/
 /////////////////////////////////////////////////////////////////////////////
 // array of lights
+uniform int enableLighting; // 0: disabled, 1: enabled
 uniform int numLights;
 uniform struct Light {
    vec4 position;
@@ -50,10 +51,12 @@ uniform int shaderMode;
 /////////////////////////////////////////////////////////////////////////////
 out vec4 outputColor;
 
+void emptyShader();
+
 bool isShadowed(int lightNr, vec3 surfaceToLight)
 { 
 	float cosTheta = clamp(dot(fragNormal, surfaceToLight),0,1);
-	float bias = 0.005*cosTheta;
+	float bias = 0.005;//*cosTheta;
 	bias = clamp(bias, 0.0,0.01);
 	
 	if(allLights[lightNr].position.w == 0)
@@ -96,8 +99,9 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
     
     //specular
     float specularCoefficient = 1;
-    if(material.shininess > 0)
+    if(material.shininess > 0){
     	specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), material.shininess);
+    	}
     vec3 specular = specularCoefficient * surfaceColor * light.intensities;
 
 	// Shadow Mapping
@@ -129,6 +133,11 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 // Phong lighting model + shadow mapping
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void LightShader(){
+	if(enableLighting == 0)
+	{
+		emptyShader();
+		return;
+	}
 	vec3 surfaceColor = vec3(texture(tex,fragTexCoord.xy));
 	vec3 surfaceToCamera = normalize(vec3(camPos - fragVertWorld));
 	
@@ -149,6 +158,7 @@ void emptyShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+
 	switch(shaderMode){
 		case 0:
 		case 1:

@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include "core/Camera.h"
 #include "core/FreeCamera.h"
-#include "core/SceneObject.h"
 
 namespace cg1 {
 
@@ -12,6 +11,8 @@ namespace cg1 {
     class Camera;
     class Mesh;
     class Texture;
+    class SceneObject;
+    class FlashLight;
 
     // TODO: select the camera model for the application here. [1/13/2016 Sebastian Maisch]
     // also: if camera model is free, GUI should be disabled.
@@ -29,6 +30,16 @@ namespace cg1 {
         void renderScene();
         void updateScene(const CG1Camera& camera, double currentTime, double elapsedTime) noexcept;
 
+        struct Light {
+            glm::vec4 position;
+            glm::vec3 intensities; //a.k.a. the color of the light
+            float att_c1;
+            float att_c2;
+            float att_c3;
+            float ambientCoefficient;
+            float coneAngle;
+            glm::vec3 coneDirection;
+        };
 
         // Private member functions
     private:
@@ -45,23 +56,14 @@ namespace cg1 {
         glm::mat4 calculateDepthVPMat(int lightIdx);
 
         void enableShadowMapping(bool enable);
+        void enableLighting(bool enable);
 
         // Private member variables
     private:
         /** Holds the scenes GPU program. */
         std::unique_ptr<GPUProgram> program_;
 
-        struct Light {
-            glm::vec4 position;
-            glm::vec3 intensities; //a.k.a. the color of the light
-            float att_c1;
-            float att_c2;
-            float att_c3;
-            float ambientCoefficient;
-            float coneAngle;
-            glm::vec3 coneDirection;
-        };
-        std::vector<Light> gLights;
+        std::vector<Light*> gLights;
 
 
 
@@ -82,6 +84,7 @@ namespace cg1 {
         GLint timeUniformLocation_;
 
 
+        GLint enableLightingUniformLocation_;
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,9 +102,7 @@ namespace cg1 {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         float currentTime_;
         bool enableWater_;
-
-
-        SceneObject* objPlane_;
+        bool enableLighting_;
 
         std::vector<SceneObject*> m_sceneObjects;
 
@@ -109,11 +110,15 @@ namespace cg1 {
         // Shadow Mapping
         // Source: http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
         /////////////////////////////////////////////////////////////////////////////////////////////////////
-        bool shadowMappingEnabled_;
+        int shadowMapSize_;
+        bool enableShadowMapping_;
+        int depthTextureSlot;
         std::vector<GLuint> frameBufferId_;
         GLuint depthTextureArrayId_;
         GLuint depthTextureArrayUniformLocation_;
         GLint enableShadowMappingUniformLocation_;
+
+        bool enableFlashLights_;
 
 
     };

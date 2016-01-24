@@ -37,7 +37,13 @@ namespace cg1 {
 
 		SceneObject();
 		SceneObject(const std::string& mesh, std::initializer_list<std::string> textures);
-		~SceneObject();
+		virtual ~SceneObject();
+
+		typedef enum{
+			TYPE_DEFAULT,
+			TYPE_FLASH_LIGHT
+		} tObjectType;
+		virtual tObjectType getType(){return tObjectType::TYPE_DEFAULT;}
 
 		void bindTexturesAndDrawMesh();
 
@@ -46,6 +52,8 @@ namespace cg1 {
 		// anlge is in radian
 		void rotate(GLfloat angle, glm::vec3 axis = glm::vec3(0.0, 1.0, 0.0));
 		void scale(glm::vec3 factors);
+
+		virtual void setTransformation(glm::vec3 T, glm::vec3 RAxis, float angle, glm::vec3 S);
 
 		glm::mat4 getModelMatrix();
 
@@ -58,7 +66,7 @@ namespace cg1 {
 		void setShaderMode(tShaderMode mode){m_shaderMode = mode;}
 		tShaderMode getShaderMode(){return m_shaderMode;}
 
-	private:
+	protected:
 		std::unique_ptr<Mesh> m_pMesh;
 		std::vector<std::unique_ptr<Texture> > m_Textures;
 
