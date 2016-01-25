@@ -17,6 +17,7 @@ uniform mat4 matVP;
 
 uniform float time;
 uniform int shaderMode;
+uniform	int waterMode;
 
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
@@ -95,7 +96,6 @@ vec2 evalWaveFktDxz(waveData data, vec2 pos){
 }
 
 void waterShader(){
-    fragTexCoord = texCoord;
     fragNormal = mat3(matNormal) * normal;
     fragVertWorld = vec3(matModel*position);
 
@@ -103,32 +103,79 @@ void waterShader(){
 	
     // http://www.cc.gatech.edu/~ybai30/cs_7490_final_website/cg_water.html
 	waveData data[4];
-	
-	data[0].amplitude = .2;
-	data[0].dir = normalize(vec2(-1,-3));
-	data[0].frequency = .4;
-	data[0].phase = 2;
-	data[0].k = 4;
-	
-	
-	data[1].amplitude = .3;
-	data[1].dir = normalize(vec2(4,3));
-	data[1].frequency = .5;
-	data[1].phase = 1;
-	data[1].k = 2;
-	
-	data[2].amplitude = .1;
-	data[2].dir = normalize(vec2(4,-8));
-	data[2].frequency = .2;
-	data[2].phase = 3;
-	data[2].k = 5;
-	
-	data[3].amplitude = .2;
-	data[3].dir = normalize(vec2(-5,10));
-	data[3].frequency = 1;
-	data[3].phase = 3;
-	data[3].k = 5;
-	
+	if(waterMode == 0){
+		data[0].amplitude = .1;
+		data[0].dir = normalize(vec2(-3,-3));
+		data[0].frequency = .4;
+		data[0].phase = 0;
+		data[0].k = 2;
+		
+		data[1].amplitude = .1;
+		data[1].dir = normalize(vec2(4,6));
+		data[1].frequency = .5;
+		data[1].phase = 1;
+		data[1].k = 2;
+		
+		data[2].amplitude = .1;
+		data[2].dir = normalize(vec2(9,-8));
+		data[2].frequency = .2;
+		data[2].phase = 3;
+		data[2].k = 2;
+		
+		data[3].amplitude = .1;
+		data[3].dir = normalize(vec2(-4,10));
+		data[3].frequency = 1;
+		data[3].phase = 3;
+		data[3].k = 2;
+	}else if(waterMode == 1){
+		data[0].amplitude = .2;
+		data[0].dir = normalize(vec2(-1,-3));
+		data[0].frequency = .4;
+		data[0].phase = 2;
+		data[0].k = 4;
+		
+		data[1].amplitude = .3;
+		data[1].dir = normalize(vec2(4,3));
+		data[1].frequency = .5;
+		data[1].phase = 1;
+		data[1].k = 2;
+		
+		data[2].amplitude = .1;
+		data[2].dir = normalize(vec2(4,-8));
+		data[2].frequency = .2;
+		data[2].phase = 3;
+		data[2].k = 5;
+		
+		data[3].amplitude = .2;
+		data[3].dir = normalize(vec2(-5,10));
+		data[3].frequency = 1;
+		data[3].phase = 3;
+		data[3].k = 5;
+	}else if(waterMode == 2){
+		data[0].amplitude = 0.5;
+		data[0].dir = normalize(vec2(1,3));
+		data[0].frequency = 0.5;
+		data[0].phase = 3;
+		data[0].k = 7;
+		
+		data[1].amplitude = .2;
+		data[1].dir = normalize(vec2(4,3));
+		data[1].frequency = .3;
+		data[1].phase = 3;
+		data[1].k = 2;
+		
+		data[2].amplitude = .3;
+		data[2].dir = normalize(vec2(4,-3));
+		data[2].frequency = .2;
+		data[2].phase = 3;
+		data[2].k = 1;
+		
+		data[3].amplitude = .5;
+		data[3].dir = normalize(vec2(-1,3));
+		data[3].frequency = .4;
+		data[3].phase = 3;
+		data[3].k = 3;
+	}
 	
 	float hRes = 0;
 	vec2 dxz = vec2(0,0);
@@ -144,6 +191,7 @@ void waterShader(){
     fragNormal = normalize(mat3(matNormal)*n);
     gl_Position = matVP * matModel* pos;
     
+    fragTexCoord = texCoord;
    
     if(enableShadowMapping == 1){
 	    for(int i = 0; i < numLights; i++){

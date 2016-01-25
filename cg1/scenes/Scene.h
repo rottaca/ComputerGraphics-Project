@@ -79,7 +79,7 @@ namespace cg1 {
         GLint cameraPosUniformLocation_;
 
         GLint tex0UniformLocation_;
-
+        GLint waterModeUniformLocation_;
         GLint shaderModeUniformLocation_;
         GLint timeUniformLocation_;
 
@@ -102,6 +102,7 @@ namespace cg1 {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         float currentTime_;
         bool enableWater_;
+        int waterMode_;
         bool enableLighting_;
 
         std::vector<SceneObject*> m_sceneObjects;

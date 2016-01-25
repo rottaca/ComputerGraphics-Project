@@ -24,7 +24,7 @@ FlashLight::~FlashLight() {
 
 void FlashLight::turnOn()
 {
-	m_light->att_c3 = 0.05f;
+	m_light->att_c3 = 0.03f;
 }
 void FlashLight::turnOff()
 {
@@ -40,7 +40,7 @@ void FlashLight::setLightRef(Scene::Light* light)
 	m_light->intensities = glm::vec3(1.6, 1.2, 0.4); //strong yellow light
 	m_light->att_c1 = 0;
 	m_light->att_c2 = 0;
-	m_light->att_c3 = 0.05f;
+	m_light->att_c3 = 0.02f;
 	m_light->ambientCoefficient = 0; //no ambient light
 	m_light->coneAngle = 20.0f;
 	m_light->coneDirection = glm::vec3(0, 0, -1);

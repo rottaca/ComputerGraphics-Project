@@ -51,7 +51,8 @@ namespace cg1 {
 		enableLighting_{true},
 		enableShadowMapping_{true},
 		enableWater_{true},
-		enableFlashLights_{true}
+		enableFlashLights_{true},
+		waterMode_{0}
     {
     	m_sceneObjects.clear();
     	gLights.clear();
@@ -67,6 +68,7 @@ namespace cg1 {
         depthTextureArrayUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shadowTexArray");
         enableShadowMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableShadowMapping");
         enableLightingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableLighting");
+        waterModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "waterMode");
 
     	std::cout << "Creating Scene Objects ..." << std::endl;
 #define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE) {\
@@ -159,10 +161,10 @@ namespace cg1 {
 //		gLights.push_back(spotlight);
 
 
-        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(8,1.25,0),glm::radians(0.0f)), glm::vec3(0,2.5,0));
-        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(8,1.25,0),glm::radians(90.0f)), glm::vec3(0,2.5,0));
-        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(8,1.25,0),glm::radians(180.0f)), glm::vec3(0,2.5,0));
-        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(8,1.25,0),glm::radians(270.0f)), glm::vec3(0,2.25,0));
+        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(-30.0f)), glm::vec3(0,1.5,0));
+        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,3,0),glm::radians(45.0f)), glm::vec3(0,1.5,0));
+        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(140.0f)), glm::vec3(0,1.5,0));
+        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,1.20,0),glm::radians(270.0f)), glm::vec3(0,2.25,0));
 
         std::cout << "Sceneobjects (meshes): " << m_sceneObjects.size() << std::endl;
         std::cout << "Light Sources: " << gLights.size() << std::endl;
@@ -209,10 +211,15 @@ namespace cg1 {
             ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiSetCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiSetCond_FirstUseEver);
             ImGui::Begin("Render Parameters");
+            ImGui::Text("General Settings");
             ImGui::Checkbox("Enable Phong Lighting",&enableLighting_);
-            ImGui::Checkbox("Enable Water",&enableWater_);
             ImGui::Checkbox("Enable Shadowmapping",&enableShadowMapping_);
             ImGui::Checkbox("Enable Flashlights",&enableFlashLights_);
+            ImGui::Text("Water Settings");
+            ImGui::Checkbox("Enable Water",&enableWater_);
+            ImGui::RadioButton("Small waves",&waterMode_,0);
+            ImGui::RadioButton("Middle waves",&waterMode_,1);
+            ImGui::RadioButton("High waves",&waterMode_,2);
             ImGui::End();
         }
 
@@ -248,6 +255,7 @@ namespace cg1 {
         // Update Scene properties
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         glUniform1f(timeUniformLocation_,currentTime_);
+        glUniform1i(waterModeUniformLocation_,waterMode_);
         glUniform1i(tex0UniformLocation_,0);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -422,7 +430,6 @@ namespace cg1 {
 
     void Scene::renderDepthImage()
     {
-    	//glCullFace(GL_FRONT);
 		for(int i = 0; i < gLights.size(); i++){
 
 			glm::mat4 depthVPMatrix = calculateDepthVPMat(i);
@@ -441,7 +448,6 @@ namespace cg1 {
 			// Render scene into that buffer
 			renderSceneObjects(true);
 		}
-    	//glCullFace(GL_BACK);
 
     }
     void Scene::renderRealImage()
@@ -498,11 +504,11 @@ namespace cg1 {
 		glm::vec3 lookAt = glm::vec3(0, 0, 0);
 		// Directional
 		if (gLights.at(lightIdx)->position.w == 0){
-			depthPMatrix = glm::ortho<float>(-20, 20, -20, 20, -20, 50);
+			depthPMatrix = glm::ortho<float>(-20, 20, -20, 20, -20, 30);
 		}
 		// Spot light
 		else if (gLights.at(lightIdx)->coneAngle < 180) {
-			depthPMatrix = glm::perspective<float>(gLights.at(lightIdx)->coneAngle,1,0.1f,50);
+			depthPMatrix = glm::perspective<float>(gLights.at(lightIdx)->coneAngle,1,0.1f,30);
 			lookAt = glm::vec3(gLights.at(lightIdx)->position) + gLights.at(lightIdx)->coneDirection;
 		}
 		// Point light
