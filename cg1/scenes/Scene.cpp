@@ -61,8 +61,8 @@ namespace cg1 {
         matModelUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matModel");
         matNormalUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matNormal");
         matVPUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matVP");
+        matVUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matV");
         tex0UniformLocation_ = glGetUniformLocation(program_->getProgramId(), "tex");
-        cameraPosUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "camPos");
         shaderModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shaderMode");
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
         depthTextureArrayUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shadowTexArray");
@@ -228,12 +228,13 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Update general uniforms
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
-        glUniform3fv(cameraPosUniformLocation_, 1, reinterpret_cast<GLfloat*>(&camPos_));
+        glUniformMatrix4fv(matVUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&viewMatrix_));
         printOpenGLError();
 
-
-		gLights.at(0)->position = glm::rotateZ(gLights.at(0)->position,0.001f);
-		gLights.at(1)->position = glm::rotateZ(gLights.at(1)->position,0.001f);
+        // Rotate sun and moon
+		for(int i = 0; i < 2; i++){
+			gLights.at(i)->position = glm::rotateZ(gLights.at(i)->position,0.001f);
+		}
 
         enableLighting(enableLighting_);
         if(enableLighting_){
@@ -249,7 +250,7 @@ namespace cg1 {
 			}
         }
 		// Update Light
-		updateLight();
+		updateLight(viewMatrix_);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Update Scene properties
@@ -276,12 +277,14 @@ namespace cg1 {
     /**
      *  Updates uniforms for light calculations in the shader.
      */
-    void Scene::updateLight()
+    void Scene::updateLight(glm::mat4 viewMat)
     {
     	glUniform1i(glGetUniformLocation(program_->getProgramId(), "numLights"), (int)gLights.size());
 
     	for(size_t i = 0; i < gLights.size(); ++i){
-    		glUniform4fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str()), 1, reinterpret_cast<GLfloat*>(&gLights[i]->position));
+    		glm::vec4 posViewSpace = viewMat*gLights[i]->position;
+    		glm::vec3 dirViewSpace = glm::mat3(viewMat)*gLights[i]->coneDirection;
+    		glUniform4fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str()), 1, reinterpret_cast<GLfloat*>(&posViewSpace));
     		printOpenGLError();
     		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("intensities", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i]->intensities));
     		printOpenGLError();
@@ -295,7 +298,7 @@ namespace cg1 {
     		printOpenGLError();
     		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneAngle", i).c_str()), gLights[i]->coneAngle);
     		printOpenGLError();
-    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i]->coneDirection));
+    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str()),1, reinterpret_cast<GLfloat*>(&dirViewSpace));
     		printOpenGLError();
     	}
     }
@@ -387,21 +390,6 @@ namespace cg1 {
 			// Setup buffer to render depth image
 			glGenFramebuffers(1, &fbId);
 	        printOpenGLError();
-
-			// Depth texture. Texture that contains the rendered depth image
-			//glTexImage2D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT24, shadowMapSize_, shadowMapSize_, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-//			printOpenGLError();
-//			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//			printOpenGLError();
-//			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//			printOpenGLError();
-//			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-//			printOpenGLError();
-//			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-//			printOpenGLError();
-//			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-//			printOpenGLError();
-
 
 			// Attach a depth buffer (our texture) to the framebuffer
 			glBindFramebuffer(GL_FRAMEBUFFER, fbId);

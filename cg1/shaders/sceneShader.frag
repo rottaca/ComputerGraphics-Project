@@ -29,7 +29,7 @@ uniform struct Material{
 	float shininess;
 	vec3 specularColor;
 } material;
-uniform vec3 camPos;
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Shadow Mapping
@@ -41,9 +41,9 @@ in vec4 fragVertShadowClip[MAX_LIGHTS];
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
 /////////////////////////////////////////////////////////////////////////////
-in vec3 fragNormal;
+in vec3 fragNormalViewSpace;
 in vec2 fragTexCoord;
-in vec3 fragVertWorld;
+in vec3 fragVertViewSpace;
 uniform int shaderMode;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -53,9 +53,9 @@ out vec4 outputColor;
 
 void emptyShader();
 
-bool isShadowed(int lightNr, vec3 surfaceToLight)
+bool isShadowed(int lightNr, vec3 surfaceToLightViewSpace)
 { 
-	float cosTheta = clamp(dot(fragNormal, surfaceToLight),0,1);
+	float cosTheta = clamp(dot(fragNormalViewSpace, surfaceToLightViewSpace),0,1);
 	float bias = 0.005;//*cosTheta;
 	bias = clamp(bias, 0.0,0.01);
 	
@@ -68,23 +68,23 @@ bool isShadowed(int lightNr, vec3 surfaceToLight)
 }
 
 // Applies the specified light
-vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, vec3 surfaceToCamera) {
+vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normalViewSpace, vec3 surfacePosViewSpace, vec3 surfaceToCameraViewSpace) {
 	Light light = allLights[lightNr];
 	
-    vec3 surfaceToLight;
+    vec3 surfaceToLightViewSpace;
     float attenuation = 1.0;
     if(light.position.w == 0.0) {
         //directional light
-        surfaceToLight = normalize(light.position.xyz);
+        surfaceToLightViewSpace = normalize(light.position.xyz);
         attenuation = 1.0; //no attenuation for directional lights
     } else {
         //point light
-        surfaceToLight = normalize(light.position.xyz - surfacePos);
-        float distanceToLight = length(light.position.xyz - surfacePos);
+        surfaceToLightViewSpace = normalize(light.position.xyz - surfacePosViewSpace);
+        float distanceToLight = length(light.position.xyz - surfacePosViewSpace);
         attenuation = min(1,1/(light.att_c1+distanceToLight*light.att_c2+distanceToLight*distanceToLight*light.att_c3));
 
         //cone restrictions (affects attenuation)
-        float lightToSurfaceAngle = degrees(acos(dot(-surfaceToLight, normalize(light.coneDirection))));
+        float lightToSurfaceAngle = degrees(acos(dot(-surfaceToLightViewSpace, normalize(light.coneDirection))));
         if(lightToSurfaceAngle > light.coneAngle){
             attenuation = 0.0;
         }
@@ -94,20 +94,20 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
     vec3 ambient = light.ambientCoefficient * surfaceColor.rgb * light.intensities;
 
     //diffuse
-    float diffuseCoefficient = max(0.0, dot(normal, surfaceToLight));
+    float diffuseCoefficient = max(0.0, dot(surfaceToLightViewSpace, normalViewSpace));
     vec3 diffuse = diffuseCoefficient * surfaceColor.rgb * light.intensities;
-    
     //specular
     float specularCoefficient = 1;
     if(material.shininess > 0){
-    	specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), material.shininess);
-    	}
-    vec3 specular = specularCoefficient * surfaceColor * light.intensities;
+    	specularCoefficient = pow(max(0.0, dot(-surfaceToCameraViewSpace, reflect(surfaceToLightViewSpace, normalViewSpace))), material.shininess);
+	}
+    vec3  specular = specularCoefficient * surfaceColor * light.intensities;
+
 
 	// Shadow Mapping
 	float visibility = 1.0;
 	
-	if (enableShadowMapping == 1 && isShadowed(lightNr, surfaceToLight)){
+	if (enableShadowMapping == 1 && isShadowed(lightNr, surfaceToLightViewSpace)){
 		visibility = 0.1;
 		
 		// Error output for unshadowed regions
@@ -116,16 +116,9 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
  		//   fragVertShadowClip[lightNr].z < 0 ||fragVertShadowClip[lightNr].z > 1)
 		//	return vec3(1,0,0);
  	}
- 	// Sun/Moon
- 	float intensity = 1.0;
- 	if(lightNr == 0 || lightNr == 1)
- 	{
- 		intensity = max(0,surfaceToLight.y);
- 	}
- 	
 	
     // linear color (color before gamma correction)
-    return ambient + intensity*visibility*attenuation*(diffuse + specular);
+    return ambient + visibility*attenuation*(diffuse + specular);
 }
 
 
@@ -139,11 +132,11 @@ void LightShader(){
 		return;
 	}
 	vec3 surfaceColor = vec3(texture(tex,fragTexCoord.xy));
-	vec3 surfaceToCamera = normalize(vec3(camPos - fragVertWorld));
+	vec3 surfaceToCameraViewSpace = normalize(-fragVertViewSpace);
 	
 	vec3 linearColor = vec3(0);
 	for(int i = 0; i < numLights; ++i){
-	    linearColor += ApplyLight(i, surfaceColor, fragNormal, vec3(fragVertWorld), surfaceToCamera);
+	    linearColor += ApplyLight(i, surfaceColor, fragNormalViewSpace, fragVertViewSpace, surfaceToCameraViewSpace);
 	}
 	outputColor = vec4(linearColor,1.0f);
 }

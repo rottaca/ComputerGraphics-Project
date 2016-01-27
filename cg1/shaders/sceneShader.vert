@@ -14,6 +14,7 @@ layout(location = 2) in vec2 texCoord;
 uniform mat4 matModel;
 uniform mat4 matNormal;
 uniform mat4 matVP;
+uniform mat4 matV;
 
 uniform float time;
 uniform int shaderMode;
@@ -22,9 +23,9 @@ uniform	int waterMode;
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
 /////////////////////////////////////////////////////////////////////////////
-out vec3 fragNormal;
+out vec3 fragNormalViewSpace;
 out vec2 fragTexCoord;
-out vec3 fragVertWorld;
+out vec3 fragVertViewSpace;
 
 /////////////////////////////////////////////////////////////////////////////
 // ShadowMapping
@@ -50,8 +51,8 @@ struct waveData{
 void emptyShader(){
 
     fragTexCoord = texCoord;
-    fragNormal = mat3(matNormal) * normal;
-    fragVertWorld = vec3(matModel*position);
+    fragNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*normal);
+    fragVertViewSpace = vec3(matV*matModel*position);
     gl_Position = matVP * matModel* position;
     
     if(enableShadowMapping == 1){
@@ -96,8 +97,6 @@ vec2 evalWaveFktDxz(waveData data, vec2 pos){
 }
 
 void waterShader(){
-    fragNormal = mat3(matNormal) * normal;
-    fragVertWorld = vec3(matModel*position);
 
 	vec4 pos = position;
 	
@@ -188,7 +187,8 @@ void waterShader(){
 	vec3 n = vec3(-dxz.x,1,-dxz.y);	
 	pos.y = hRes;
 	
-    fragNormal = normalize(mat3(matNormal)*n);
+    fragVertViewSpace = vec3(matV*matModel*position);
+    fragNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*n);
     gl_Position = matVP * matModel* pos;
     
     fragTexCoord = texCoord;

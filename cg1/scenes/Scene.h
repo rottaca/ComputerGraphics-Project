@@ -44,7 +44,7 @@ namespace cg1 {
         // Private member functions
     private:
         /* Updates uniforms for light calculations in the shader. */
-        void updateLight();
+        void updateLight(glm::mat4 viewMat);
         std::string getLightUniformName(const char* propertyName, size_t lightIndex);
         void updateMaterial(float shininess, glm::vec3 specularColor);
 
@@ -76,7 +76,8 @@ namespace cg1 {
         GLint matNormalUniformLocation_;
         /** Holds uniform name for the view-projection matrix. */
         GLint matVPUniformLocation_;
-        GLint cameraPosUniformLocation_;
+        /** Holds uniform name for the view matrix. */
+        GLint matVUniformLocation_;
 
         GLint tex0UniformLocation_;
         GLint waterModeUniformLocation_;
