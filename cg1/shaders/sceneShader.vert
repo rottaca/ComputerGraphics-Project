@@ -7,6 +7,7 @@
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texCoord;
+layout(location = 3) in vec3 tangent;
 
 /////////////////////////////////////////////////////////////////////////////
 // Uniforms
@@ -23,7 +24,7 @@ uniform	int waterMode;
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
 /////////////////////////////////////////////////////////////////////////////
-out vec3 fragNormalViewSpace;
+out vec3 fragVaryingNormalViewSpace;
 out vec2 fragTexCoord;
 out vec3 fragVertViewSpace;
 
@@ -36,6 +37,12 @@ uniform mat4 matDepthVP[MAX_LIGHTS];
 out vec4 fragVertShadowClip[MAX_LIGHTS];
 uniform int numLights;
 
+/////////////////////////////////////////////////////////////////////////////
+// BumpMapping
+/////////////////////////////////////////////////////////////////////////////
+uniform int enableBumpMapping; // 0: disabled, 1:enabled
+uniform int hasBumpMap; // 0: disabled, 1:enabled
+out vec3 fragTangentViewSpace;
 
 struct waveData{
 	float amplitude;
@@ -51,7 +58,7 @@ struct waveData{
 void emptyShader(){
 
     fragTexCoord = texCoord;
-    fragNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*normal);
+    fragVaryingNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*normal);
     fragVertViewSpace = vec3(matV*matModel*position);
     gl_Position = matVP * matModel* position;
     
@@ -188,7 +195,7 @@ void waterShader(){
 	pos.y = hRes;
 	
     fragVertViewSpace = vec3(matV*matModel*position);
-    fragNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*n);
+    fragVaryingNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*n);
     gl_Position = matVP * matModel* pos;
     
     fragTexCoord = texCoord;
@@ -205,6 +212,9 @@ void waterShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+	if(enableBumpMapping == 1 && hasBumpMap == 1)
+		fragTangentViewSpace = normalize(mat3(matV)*mat3(matNormal)*tangent);
+
 	switch(shaderMode){
 		case 1:
 		case 5:

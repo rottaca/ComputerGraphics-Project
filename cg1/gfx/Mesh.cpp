@@ -108,6 +108,25 @@ namespace cg1 {
             for (unsigned int j = 0; j < mesh->mFaces[i].mNumIndices; j++)
                 indices_.push_back(mesh->mFaces[i].mIndices[j]);
 
+		MeshVertex *v0, *v1, *v2;
+		float r;
+		for (unsigned int i = 0; i < indices_.size(); i+=3) {
+			v0 = &vertices_.at(indices_.at(i));
+			v1 = &vertices_.at(indices_.at(i+1));
+			v2 = &vertices_.at(indices_.at(i+2));
+
+			glm::vec3 deltaPos1 = glm::vec3(v1->position - v0->position);
+			glm::vec3 deltaPos2 = glm::vec3(v2->position - v0->position);
+
+			glm::vec2 deltaUV1 = glm::vec2(v1->textureCoordinate - v0->textureCoordinate);
+			glm::vec2 deltaUV2 = glm::vec2(v2->textureCoordinate - v0->textureCoordinate);
+
+			r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+			v0->tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y)*r;
+			v1->tangent = v0->tangent;
+			v2->tangent = v0->tangent;
+		}
+
         // Bind a Vertex Array Object
         glGenVertexArrays(1, &vertexArray_);
         glBindVertexArray(vertexArray_);
@@ -126,9 +145,11 @@ namespace cg1 {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), reinterpret_cast<GLvoid*>(offsetof(MeshVertex, position)));
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), reinterpret_cast<GLvoid*>(offsetof(MeshVertex, normal)));
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), reinterpret_cast<GLvoid*>(offsetof(MeshVertex, textureCoordinate)));
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), reinterpret_cast<GLvoid*>(offsetof(MeshVertex, tangent)));
         glEnableVertexAttribArray(0); // Vertex Positions
         glEnableVertexAttribArray(1); // Vertex Normals
         glEnableVertexAttribArray(2); // Vertex UVs
+		glEnableVertexAttribArray(3); // tangent
 
         glBindVertexArray(0);
         glDeleteBuffers(1, &vertexBuffer_);

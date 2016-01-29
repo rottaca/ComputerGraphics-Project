@@ -19,6 +19,8 @@ namespace cg1 {
         glm::vec3 normal;
         /** The vertex texture coordinate. */
         glm::vec2 textureCoordinate;
+
+		glm::vec3 tangent;
     };
 
     /**

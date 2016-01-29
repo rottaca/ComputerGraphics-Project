@@ -17,6 +17,7 @@
 #include "core/FlashLight.h"
 
 #define printOpenGLError() printOglError(__FILE__, __LINE__)
+#define COMMA ,
 
 int printOglError(const char *file, int line)
 {
@@ -50,6 +51,7 @@ namespace cg1 {
 		depthTextureSlot{10},
 		enableLighting_{true},
 		enableShadowMapping_{true},
+		enableBumpMapping_{true},
 		enableWater_{true},
 		enableFlashLights_{true},
 		waterMode_{0}
@@ -63,19 +65,23 @@ namespace cg1 {
         matVPUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matVP");
         matVUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "matV");
         tex0UniformLocation_ = glGetUniformLocation(program_->getProgramId(), "tex");
+		tex1UniformLocation_ = glGetUniformLocation(program_->getProgramId(), "normalTex");
         shaderModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shaderMode");
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
         depthTextureArrayUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shadowTexArray");
         enableShadowMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableShadowMapping");
+		enableBumpMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableBumpMapping");
+		hasBumpMapUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "hasBumpMap");
         enableLightingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableLighting");
         waterModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "waterMode");
 
     	std::cout << "Creating Scene Objects ..." << std::endl;
-#define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE) {\
+#define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE, HAS_BUMP_MAP) {\
 			SceneObject* obj = new SceneObject(OBJ_FILE,TEX_LIST); \
 			obj->setTransformation(T,R_AXIS,R_ANGLE,S);\
 			obj->setMaterialAttributes(SHININESS,SPEC_COLOR);\
 			obj->setShaderMode(SHADER_MODE);\
+			obj->setBumpMappingStatus(HAS_BUMP_MAP);\
 			m_sceneObjects.push_back(obj);\
     	}
 #define ADD_FLASHLIGHT(P,LOOK_AT) {\
@@ -91,29 +97,36 @@ namespace cg1 {
         ADD_SCENE_OBJECT("terrainSurface.obj",{"terrain_DIFFUSE.jpg"},
         		glm::vec3(0,0,0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
 				100,glm::vec3(1,1,1),
-				SceneObject::DEFAULT);
-        ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg"},
+				SceneObject::DEFAULT, 
+				0);
+        ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg" COMMA "water_NORMAL.jpg"},
         		glm::vec3(0, -2.2, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
 				10,glm::vec3(1,1,1),
-				SceneObject::WATER);
-        ADD_SCENE_OBJECT("Stonehengebed.obj",{"Stonehenge_texture.png"},
+				SceneObject::WATER,
+				1);
+
+        ADD_SCENE_OBJECT("Stonehengebed.obj",{"192.jpg" COMMA "192_norm.jpg"},
         		glm::vec3(0, 1, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
 				100,glm::vec3(1,1,1),
-				SceneObject::DEFAULT);
+				SceneObject::DEFAULT,
+				1);
 
 
         ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
         		glm::vec3(1,1,5),glm::vec3(0,1,0),glm::radians(-45.0f),glm::vec3(0.2,0.2,0.2),
 				100,glm::vec3(1,1,1),
-				SceneObject::DEFAULT);
+				SceneObject::DEFAULT,
+				0);
         ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
         		glm::vec3(0,1,5),glm::vec3(0,1,0),glm::radians(70.0f),glm::vec3(0.2,0.2,0.2),
 				100,glm::vec3(1,1,1),
-				SceneObject::DEFAULT);
+				SceneObject::DEFAULT,
+				0);
         ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
         		glm::vec3(-1,1,5),glm::vec3(0,1,0),glm::radians(20.0f),glm::vec3(0.2,0.2,0.2),
 				100,glm::vec3(1,1,1),
-				SceneObject::DEFAULT);
+				SceneObject::DEFAULT,
+				0);
 
 
     	std::cout << "Creating Lights ..." << std::endl;
@@ -214,6 +227,7 @@ namespace cg1 {
             ImGui::Text("General Settings");
             ImGui::Checkbox("Enable Phong Lighting",&enableLighting_);
             ImGui::Checkbox("Enable Shadowmapping",&enableShadowMapping_);
+			ImGui::Checkbox("Enable Bumpmapping", &enableBumpMapping_);
             ImGui::Checkbox("Enable Flashlights",&enableFlashLights_);
             ImGui::Text("Water Settings");
             ImGui::Checkbox("Enable Water",&enableWater_);
@@ -258,12 +272,15 @@ namespace cg1 {
         glUniform1f(timeUniformLocation_,currentTime_);
         glUniform1i(waterModeUniformLocation_,waterMode_);
         glUniform1i(tex0UniformLocation_,0);
+		glUniform1i(tex1UniformLocation_, 1);
+
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Render Scene
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
     	glUniform1i(depthTextureArrayUniformLocation_,depthTextureSlot);
         enableShadowMapping(enableShadowMapping_);
+		enableBumpMapping(enableBumpMapping_);
         if(enableShadowMapping_){
         	// Shadow mapping: Render to depth buffer
         	renderDepthImage();
@@ -346,6 +363,7 @@ namespace cg1 {
 				}
     		}
 
+			glUniform1i(hasBumpMapUniformLocation_, so->getBumpMappingStatus());
             glUniform1i(shaderModeUniformLocation_, mode);
     		printOpenGLError();
             glm::mat4 mm = so->getModelMatrix();
@@ -480,6 +498,13 @@ namespace cg1 {
 		printOpenGLError();
         enableShadowMapping_ = enable;
     }
+
+	void Scene::enableBumpMapping(bool enable)
+	{
+		glUniform1i(enableBumpMappingUniformLocation_, enable ? 1 : 0);
+		printOpenGLError();
+	}
+
     void Scene::enableLighting(bool enable)
     {
         glUniform1i(enableLightingUniformLocation_, enable?1:0);

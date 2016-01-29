@@ -6,6 +6,7 @@
 // Uniforms
 /////////////////////////////////////////////////////////////////////////////
 uniform sampler2D tex;	// Diffuse texture
+uniform sampler2D normalTex;
 
 /////////////////////////////////////////////////////////////////////////////
 // Light
@@ -39,9 +40,16 @@ uniform sampler2DArray shadowTexArray;
 in vec4 fragVertShadowClip[MAX_LIGHTS];
 
 /////////////////////////////////////////////////////////////////////////////
+// Bump Mapping
+/////////////////////////////////////////////////////////////////////////////
+uniform int enableBumpMapping; // 0: disabled, 1:enabled
+uniform int hasBumpMap; // 0: disabled, 1:enabled
+in vec3 fragTangentViewSpace;
+
+/////////////////////////////////////////////////////////////////////////////
 // Varyings
 /////////////////////////////////////////////////////////////////////////////
-in vec3 fragNormalViewSpace;
+in vec3 fragVaryingNormalViewSpace;
 in vec2 fragTexCoord;
 in vec3 fragVertViewSpace;
 uniform int shaderMode;
@@ -50,6 +58,8 @@ uniform int shaderMode;
 // Output
 /////////////////////////////////////////////////////////////////////////////
 out vec4 outputColor;
+
+vec3 fragNormalViewSpace;
 
 void emptyShader();
 
@@ -139,11 +149,13 @@ void LightShader(){
 	    linearColor += ApplyLight(i, surfaceColor, fragNormalViewSpace, fragVertViewSpace, surfaceToCameraViewSpace);
 	}
 	outputColor = vec4(linearColor,1.0f);
+	//outputColor = vec4(fragTangentViewSpace,1.0f);
 }
 
 
 void emptyShader(){
 	outputColor = texture(tex,fragTexCoord.xy);
+	//outputColor = vec4(fragTangentViewSpace,1.0f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +163,16 @@ void emptyShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+	if(enableBumpMapping == 1 && hasBumpMap == 1){
+		vec3 fragBitangentViewSpace = cross(fragTangentViewSpace, fragVaryingNormalViewSpace);
+
+		mat3 TBN = mat3(fragTangentViewSpace.x, fragTangentViewSpace.y, fragTangentViewSpace.z,
+					fragBitangentViewSpace.x, fragBitangentViewSpace.y, fragBitangentViewSpace.z,
+					fragVaryingNormalViewSpace.x, fragVaryingNormalViewSpace.y, fragVaryingNormalViewSpace.z);
+
+		fragNormalViewSpace = TBN * normalize(vec3(texture(normalTex,fragTexCoord.xy)) * 2 - 1);
+	} else
+		fragNormalViewSpace = fragVaryingNormalViewSpace;
 
 	switch(shaderMode){
 		case 0:

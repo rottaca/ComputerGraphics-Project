@@ -52,6 +52,8 @@ namespace cg1 {
 		// anlge is in radian
 		void rotate(GLfloat angle, glm::vec3 axis = glm::vec3(0.0, 1.0, 0.0));
 		void scale(glm::vec3 factors);
+		void setBumpMappingStatus(int status);
+		int getBumpMappingStatus() { return bumpMappingStatus; }
 
 		virtual void setTransformation(glm::vec3 T, glm::vec3 RAxis, float angle, glm::vec3 S);
 
@@ -65,13 +67,14 @@ namespace cg1 {
 		glm::vec3 getSpecularColor();
 		void setShaderMode(tShaderMode mode){m_shaderMode = mode;}
 		tShaderMode getShaderMode(){return m_shaderMode;}
-
 	protected:
 		std::unique_ptr<Mesh> m_pMesh;
 		std::vector<std::unique_ptr<Texture> > m_Textures;
 
 		glm::mat4 m_ModelMatrix;
 		tShaderMode m_shaderMode;
+
+		int bumpMappingStatus = 1;
 	};
 
 }

@@ -16,6 +16,7 @@ namespace cg1{
 SceneObject::SceneObject()
 {
 	m_shaderMode = tShaderMode::DEFAULT;
+	bumpMappingStatus = 0;
 }
 
 
@@ -24,6 +25,8 @@ SceneObject::~SceneObject()
 }
 
 SceneObject::SceneObject(const std::string& mesh, std::initializer_list<std::string> textures) : m_ModelMatrix(glm::mat4(1.0)){
+	bumpMappingStatus = 0;
+	
 	m_pMesh = std::make_unique<Mesh>(PATH_MESHES + "/" + mesh);
 	for (std::initializer_list<std::string>::iterator it = textures.begin(); it != textures.end(); ++it) {
 		std::cout << "Loading texture " << *it << " ...";
@@ -86,6 +89,10 @@ SceneObject::MaterialAttributes SceneObject::getMaterialAttributes() {
 }
 glm::vec3 SceneObject::getSpecularColor() {
 	return materialAttributes.specularColor;
+}
+
+void SceneObject::setBumpMappingStatus(int status) {
+	bumpMappingStatus = status;
 }
 
 }

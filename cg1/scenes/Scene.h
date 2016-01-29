@@ -56,6 +56,7 @@ namespace cg1 {
         glm::mat4 calculateDepthVPMat(int lightIdx);
 
         void enableShadowMapping(bool enable);
+		void enableBumpMapping(bool enable);
         void enableLighting(bool enable);
 
         // Private member variables
@@ -80,6 +81,7 @@ namespace cg1 {
         GLint matVUniformLocation_;
 
         GLint tex0UniformLocation_;
+		GLint tex1UniformLocation_;
         GLint waterModeUniformLocation_;
         GLint shaderModeUniformLocation_;
         GLint timeUniformLocation_;
@@ -114,11 +116,14 @@ namespace cg1 {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         int shadowMapSize_;
         bool enableShadowMapping_;
+		bool enableBumpMapping_;
         int depthTextureSlot;
         std::vector<GLuint> frameBufferId_;
         GLuint depthTextureArrayId_;
         GLuint depthTextureArrayUniformLocation_;
         GLint enableShadowMappingUniformLocation_;
+		GLint enableBumpMappingUniformLocation_;
+		GLint hasBumpMapUniformLocation_;
 
         bool enableFlashLights_;
 
