@@ -172,16 +172,18 @@ void waterShader(){
 		data[3].amplitude = .5;
 		data[3].dir = normalize(vec2(-1,3));
 		data[3].frequency = .4;
-		data[3].phase = 3;
+		data[3].phase = 3 ;
 		data[3].k = 3;
 	}
 	
 	float hRes = 0;
 	vec2 dxz = vec2(0,0);
+	vec2 moveDir = vec2(0,0);
 	
 	for(int i = 0; i < 4; i++){
 		hRes += evalWaveFkt(data[i],pos.xz);
 		dxz += evalWaveFktDxz(data[i],pos.xz);
+		moveDir += -data[i].dir*data[i].amplitude*data[i].frequency;
 	}
 	
 	vec3 n = vec3(-dxz.x,1,-dxz.y);	
@@ -191,7 +193,7 @@ void waterShader(){
     fragNormalViewSpace = normalize(mat3(matV)*mat3(matNormal)*n);
     gl_Position = matVP * matModel* pos;
     
-    fragTexCoord = texCoord;
+    fragTexCoord = texCoord+moveDir*time;
    
     if(enableShadowMapping == 1){
 	    for(int i = 0; i < numLights; i++){

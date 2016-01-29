@@ -52,6 +52,7 @@ namespace cg1 {
 		enableShadowMapping_{true},
 		enableWater_{true},
 		enableFlashLights_{true},
+		enableSmoothShadows_{false},
 		waterMode_{0},
 		lastUpdate_{0},
 		lastFPS_{-1}
@@ -71,6 +72,9 @@ namespace cg1 {
         enableShadowMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableShadowMapping");
         enableLightingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableLighting");
         waterModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "waterMode");
+        materialSpecularColUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "material.specularColor");
+        materialShininessUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "material.shininess");
+        enableSmoothShadowsUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableSmoothShadows");
 
     	std::cout << "Creating Scene Objects ..." << std::endl;
 #define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE) {\
@@ -96,7 +100,7 @@ namespace cg1 {
 				SceneObject::DEFAULT);
         ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg"},
         		glm::vec3(0, -2.2, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
-				10,glm::vec3(1,1,1),
+				100,glm::vec3(1,1,1),
 				SceneObject::WATER);
         ADD_SCENE_OBJECT("Stonehengebed.obj",{"Stonehenge_texture.png"},
         		glm::vec3(0, 1, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
@@ -123,8 +127,8 @@ namespace cg1 {
         // Sun
         Light* directionalLight = new Light();
         directionalLight->position = glm::vec4(10, 5, 5, 0); //w == 0 indications a directional light
-        //directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
-        directionalLight->intensities = glm::vec3(0.5,0.5,0.5); //white light
+        //directionalLight->intensities = glm::vec3(255,184,19)/255.0f; //weak yellowish light
+        directionalLight->intensities = glm::vec3(1,1,1); //white light
         directionalLight->ambientCoefficient = 0.1;
         directionalLight->att_c1 = 0;
         directionalLight->att_c2 = 0;
@@ -163,7 +167,7 @@ namespace cg1 {
 //		gLights.push_back(spotlight);
 
 
-        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(-30.0f)), glm::vec3(0,1.5,0));
+        //ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(-30.0f)), glm::vec3(0,1.5,0));
         ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,3,0),glm::radians(45.0f)), glm::vec3(0,1.5,0));
         ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(140.0f)), glm::vec3(0,1.5,0));
         ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,1.20,0),glm::radians(270.0f)), glm::vec3(0,2.25,0));
@@ -171,6 +175,8 @@ namespace cg1 {
         std::cout << "Sceneobjects (meshes): " << m_sceneObjects.size() << std::endl;
         std::cout << "Light Sources: " << gLights.size() << std::endl;
 
+
+        getLightUniformLocations();
 		initShadowMapping();
     }
 
@@ -224,7 +230,8 @@ namespace cg1 {
             ImGui::Text(ss.str().c_str());
             ImGui::Text("General Settings");
             ImGui::Checkbox("Enable Phong Lighting",&enableLighting_);
-            ImGui::Checkbox("Enable Shadowmapping",&enableShadowMapping_);
+            ImGui::Checkbox("Enable Shadow-Mapping",&enableShadowMapping_);
+            ImGui::Checkbox("Enable Smooth shadows",&enableSmoothShadows_);
             ImGui::Checkbox("Enable Flashlights",&enableFlashLights_);
             ImGui::Text("Water Settings");
             ImGui::Checkbox("Enable Water",&enableWater_);
@@ -244,7 +251,7 @@ namespace cg1 {
 
         // Rotate sun and moon
 		for(int i = 0; i < 2; i++){
-			gLights.at(i)->position = glm::rotateZ(gLights.at(i)->position,0.001f);
+			gLights.at(i)->position = glm::rotateZ(gLights.at(i)->position,(currentTime_-lastUpdate_)*0.1f);
 		}
 
         enableLighting(enableLighting_);
@@ -274,7 +281,7 @@ namespace cg1 {
         // Render Scene
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
     	glUniform1i(depthTextureArrayUniformLocation_,depthTextureSlot);
-        enableShadowMapping(enableShadowMapping_);
+        enableShadowMapping(enableShadowMapping_, enableSmoothShadows_);
         if(enableShadowMapping_){
         	// Shadow mapping: Render to depth buffer
         	renderDepthImage();
@@ -290,26 +297,26 @@ namespace cg1 {
      */
     void Scene::updateLight(glm::mat4 viewMat)
     {
-    	glUniform1i(glGetUniformLocation(program_->getProgramId(), "numLights"), (int)gLights.size());
+    	glUniform1i(numLightsUniformLocation_, (int)gLights.size());
 
     	for(size_t i = 0; i < gLights.size(); ++i){
     		glm::vec4 posViewSpace = viewMat*gLights[i]->position;
     		glm::vec3 dirViewSpace = glm::mat3(viewMat)*gLights[i]->coneDirection;
-    		glUniform4fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str()), 1, reinterpret_cast<GLfloat*>(&posViewSpace));
+    		glUniform4fv(gLights[i]->positionLoc, 1, reinterpret_cast<GLfloat*>(&posViewSpace));
     		printOpenGLError();
-    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("intensities", i).c_str()),1, reinterpret_cast<GLfloat*>(&gLights[i]->intensities));
+    		glUniform3fv(gLights[i]->intensitiesLoc ,1, reinterpret_cast<GLfloat*>(&gLights[i]->intensities));
     		printOpenGLError();
-    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c1", i).c_str()), gLights[i]->att_c1);
+    		glUniform1f(gLights[i]->att_c1Loc, gLights[i]->att_c1);
     		printOpenGLError();
-    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c2", i).c_str()), gLights[i]->att_c2);
+    		glUniform1f(gLights[i]->att_c2Loc, gLights[i]->att_c2);
     		printOpenGLError();
-    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c3", i).c_str()), gLights[i]->att_c3);
+    		glUniform1f(gLights[i]->att_c3Loc, gLights[i]->att_c3);
     		printOpenGLError();
-    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("ambientCoefficient", i).c_str()), gLights[i]->ambientCoefficient);
+    		glUniform1f(gLights[i]->ambientCoefficientLoc, gLights[i]->ambientCoefficient);
     		printOpenGLError();
-    		glUniform1f(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneAngle", i).c_str()), gLights[i]->coneAngle);
+    		glUniform1f(gLights[i]->coneAngleLoc, gLights[i]->coneAngle);
     		printOpenGLError();
-    		glUniform3fv(glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str()),1, reinterpret_cast<GLfloat*>(&dirViewSpace));
+    		glUniform3fv(gLights[i]->coneDirectionLoc,1, reinterpret_cast<GLfloat*>(&dirViewSpace));
     		printOpenGLError();
     	}
     }
@@ -322,9 +329,9 @@ namespace cg1 {
     }
     void Scene::updateMaterial(float shininess, glm::vec3 specularColor)
     {
-    	glUniform1f(glGetUniformLocation(program_->getProgramId(),"material.shininess"),shininess);
+    	glUniform1f(materialShininessUniformLocation_,shininess);
 		printOpenGLError();
-    	glUniform3fv(glGetUniformLocation(program_->getProgramId(),"material.specularColor"),1, reinterpret_cast<GLfloat*>(&specularColor));
+    	glUniform3fv(materialSpecularColUniformLocation_,1, reinterpret_cast<GLfloat*>(&specularColor));
 		printOpenGLError();
     }
 
@@ -485,9 +492,10 @@ namespace cg1 {
         renderSceneObjects();
 
     }
-    void Scene::enableShadowMapping(bool enable)
+    void Scene::enableShadowMapping(bool enable, bool smooth)
     {
         glUniform1i(enableShadowMappingUniformLocation_, enable?1:0);
+        glUniform1i(enableSmoothShadowsUniformLocation_, smooth?1:0);
 		printOpenGLError();
         enableShadowMapping_ = enable;
     }
@@ -503,7 +511,7 @@ namespace cg1 {
 		glm::vec3 lookAt = glm::vec3(0, 0, 0);
 		// Directional
 		if (gLights.at(lightIdx)->position.w == 0){
-			depthPMatrix = glm::ortho<float>(-20, 20, -20, 20, -20, 30);
+			depthPMatrix = glm::ortho<float>(-20, 20, -20, 20, -10, 30);
 		}
 		// Spot light
 		else if (gLights.at(lightIdx)->coneAngle < 180) {
@@ -519,5 +527,20 @@ namespace cg1 {
 		glm::mat4 depthVPMatrix = depthPMatrix * depthVMatrix;
 		return depthVPMatrix;
 
+    }
+    void Scene::getLightUniformLocations()
+    {
+    	numLightsUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "numLights");
+    	for(size_t i = 0; i < gLights.size(); ++i){
+    		Light* l = gLights.at(i);
+    		l->positionLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("position", i).c_str());
+    		l->intensitiesLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("intensities", i).c_str());
+    		l->att_c1Loc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c1", i).c_str());
+    		l->att_c2Loc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c2", i).c_str());
+    		l->att_c3Loc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("att_c3", i).c_str());
+    		l->ambientCoefficientLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("ambientCoefficient", i).c_str());
+    		l->coneAngleLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneAngle", i).c_str());
+    		l->coneDirectionLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str());
+    	}
     }
 }

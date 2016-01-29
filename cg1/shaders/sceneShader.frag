@@ -35,6 +35,7 @@ uniform struct Material{
 // Shadow Mapping
 /////////////////////////////////////////////////////////////////////////////
 uniform int enableShadowMapping;	// 0: disabled, 1:enabled
+uniform int enableSmoothShadows;	// 0: disabled, 1:enabled
 uniform sampler2DArray shadowTexArray;
 in vec4 fragVertShadowClip[MAX_LIGHTS];
 
@@ -53,19 +54,64 @@ out vec4 outputColor;
 
 void emptyShader();
 
-bool isShadowed(int lightNr, vec3 surfaceToLightViewSpace)
+float texture2DArrayCompare(int lightNr, vec4 shadowCoord, float bias){
+
+
+    float depth;
+    
+    
+	if(allLights[lightNr].position.w == 0){
+    	depth = texture2DArray(shadowTexArray, vec3(shadowCoord.xy,lightNr)).r;
+    	return step(shadowCoord.z, depth+bias);
+    }
+   
+	else if(allLights[lightNr].coneAngle <180){
+		depth = texture2DArray(shadowTexArray, vec3(shadowCoord.xy/shadowCoord.w,lightNr)).r;
+    	return step(shadowCoord.z/shadowCoord.w, depth+bias);
+	}
+	else
+		return 1;
+    
+}
+
+bool isShadowed(int lightNr, vec3 surfaceToLightViewSpace, vec4 loc, vec2 offset)
 { 
 	float cosTheta = clamp(dot(fragNormalViewSpace, surfaceToLightViewSpace),0,1);
-	float bias = 0.005;//*cosTheta;
+	float bias = 0.00;//*cosTheta;
 	bias = clamp(bias, 0.0,0.01);
 	
 	if(allLights[lightNr].position.w == 0)
-		return texture2DArray( shadowTexArray, vec3(fragVertShadowClip[lightNr].xy, lightNr) ).x  <  fragVertShadowClip[lightNr].z - bias;
+		return texture2DArray( shadowTexArray, vec3(loc.xy + offset.xy, lightNr) ).x  <  loc.z - bias;
 	// Perspecive devision for spot light
 	else if(allLights[lightNr].coneAngle <180)
-		return texture2DArray( shadowTexArray, vec3(fragVertShadowClip[lightNr].xy/fragVertShadowClip[lightNr].w, lightNr) ).x  <  (fragVertShadowClip[lightNr].z - bias)/fragVertShadowClip[lightNr].w;
-	
+		return texture2DArray( shadowTexArray, vec3((loc.xy + offset.xy)/loc.w, lightNr) ).x  <  (loc.z - bias)/loc.w;
 }
+
+float smoothedShadowCoeff(int lightNr, vec3 surfaceToLightViewSpace)
+{
+	float cosTheta = clamp(dot(fragNormalViewSpace, surfaceToLightViewSpace),0,1);
+	float bias = 0.005 ;//*cosTheta;
+	bias = clamp(bias, 0.0,0.01);
+	
+	vec4 shadowCoord = fragVertShadowClip[lightNr];
+	
+	if(enableSmoothShadows == 0)
+		return texture2DArrayCompare(lightNr,shadowCoord,bias);
+	
+	float sum = 0;
+	vec2 poissonDisk[4] = vec2[](
+	   vec2( -0.94201624, -0.39906216 ),
+	   vec2( 0.94558609, -0.76890725 ),
+	   vec2( -0.094184101, -0.92938870 ),
+	   vec2( 0.34495938, 0.29387760 )
+	 );
+ 
+	for (int i = 0; i < 4; i ++)
+	  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i],0,0)/512.0,bias);
+	  	
+	return sum/4.0;
+}
+
 
 // Applies the specified light
 vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normalViewSpace, vec3 surfacePosViewSpace, vec3 surfaceToCameraViewSpace) {
@@ -104,20 +150,17 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normalViewSpace, vec3 surfa
 
 
 	// Shadow Mapping
-	float visibility = 1.0;
-	
-	if (enableShadowMapping == 1 && isShadowed(lightNr, surfaceToLightViewSpace)){
-		visibility = 0.1;
+	if (enableShadowMapping == 1){
 		
-		// Error output for unshadowed regions
- 		//if(fragVertShadowClip[lightNr].y < 0 ||fragVertShadowClip[lightNr].y > 1 || 
- 		//   fragVertShadowClip[lightNr].x < 0 ||fragVertShadowClip[lightNr].x > 1 || 
- 		//   fragVertShadowClip[lightNr].z < 0 ||fragVertShadowClip[lightNr].z > 1)
-		//	return vec3(1,0,0);
+		float visibility  = smoothedShadowCoeff(lightNr,surfaceToLightViewSpace);
+
+    	// linear color (color before gamma correction)
+    	return ambient + visibility*attenuation*(diffuse + specular);
+ 	}else{
+	    // linear color (color before gamma correction)
+	    return ambient + attenuation*(diffuse + specular);
  	}
 	
-    // linear color (color before gamma correction)
-    return ambient + visibility*attenuation*(diffuse + specular);
 }
 
 

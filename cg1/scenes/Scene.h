@@ -32,13 +32,21 @@ namespace cg1 {
 
         struct Light {
             glm::vec4 position;
+            GLint positionLoc;
             glm::vec3 intensities; //a.k.a. the color of the light
+            GLint intensitiesLoc;
             float att_c1;
+            GLint att_c1Loc;
             float att_c2;
+            GLint att_c2Loc;
             float att_c3;
+            GLint att_c3Loc;
             float ambientCoefficient;
+            GLint ambientCoefficientLoc;
             float coneAngle;
+            GLint coneAngleLoc;
             glm::vec3 coneDirection;
+            GLint coneDirectionLoc;
         };
 
         // Private member functions
@@ -47,15 +55,17 @@ namespace cg1 {
         void updateLight(glm::mat4 viewMat);
         std::string getLightUniformName(const char* propertyName, size_t lightIndex);
         void updateMaterial(float shininess, glm::vec3 specularColor);
+        void getLightUniformLocations();
 
         void renderSceneObjects(bool onlyDepth=false);
+
 
         void initShadowMapping();
         void renderDepthImage();
         void renderRealImage();
         glm::mat4 calculateDepthVPMat(int lightIdx);
 
-        void enableShadowMapping(bool enable);
+        void enableShadowMapping(bool enable, bool smooth);
         void enableLighting(bool enable);
 
         // Private member variables
@@ -86,9 +96,10 @@ namespace cg1 {
         GLint shaderModeUniformLocation_;
         GLint timeUniformLocation_;
 
-
+        GLint numLightsUniformLocation_;
         GLint enableLightingUniformLocation_;
-
+        GLint materialSpecularColUniformLocation_;
+        GLint materialShininessUniformLocation_;
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         //
@@ -116,11 +127,13 @@ namespace cg1 {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         int shadowMapSize_;
         bool enableShadowMapping_;
+        bool enableSmoothShadows_;
         int depthTextureSlot;
         std::vector<GLuint> frameBufferId_;
         GLuint depthTextureArrayId_;
         GLuint depthTextureArrayUniformLocation_;
         GLint enableShadowMappingUniformLocation_;
+        GLint enableSmoothShadowsUniformLocation_;
 
         bool enableFlashLights_;
 
