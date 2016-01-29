@@ -100,11 +100,11 @@ namespace cg1 {
     	}
 
         // Setup scene
-        ADD_SCENE_OBJECT("terrainSurface.obj",{"terrain_DIFFUSE.jpg"},
+        ADD_SCENE_OBJECT("terrainSurface.obj",{"terrain_DIFFUSE.jpg" COMMA "terrain_NORMAL.jpg"},
         		glm::vec3(0,0,0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
 				100,glm::vec3(1,1,1),
 				SceneObject::DEFAULT, 
-				0);
+				1);
         ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg" COMMA "water_NORMAL.jpg"},
         		glm::vec3(0, -2.2, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
 				100,glm::vec3(1,1,1),
