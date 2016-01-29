@@ -89,7 +89,6 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normalViewSpace, vec3 surfa
             attenuation = 0.0;
         }
     }
-
     //ambient
     vec3 ambient = light.ambientCoefficient * surfaceColor.rgb * light.intensities;
 
@@ -143,6 +142,7 @@ void LightShader(){
 
 
 void emptyShader(){
+
 	outputColor = texture(tex,fragTexCoord.xy);
 }
 

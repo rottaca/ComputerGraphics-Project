@@ -66,6 +66,8 @@ namespace cg1 {
         std::vector<Light*> gLights;
 
 
+        float lastUpdate_;
+        float lastFPS_;
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         // Uniforms

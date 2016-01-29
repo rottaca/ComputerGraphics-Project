@@ -52,7 +52,9 @@ namespace cg1 {
 		enableShadowMapping_{true},
 		enableWater_{true},
 		enableFlashLights_{true},
-		waterMode_{0}
+		waterMode_{0},
+		lastUpdate_{0},
+		lastFPS_{-1}
     {
     	m_sceneObjects.clear();
     	gLights.clear();
@@ -199,6 +201,7 @@ namespace cg1 {
         VPMatrix_ = camera.getProjMatrix() * camera.getViewMatrix();
         viewMatrix_ = camera.getViewMatrix();
         camPos_ = camera.getPosition();
+        lastUpdate_ = currentTime_;
         currentTime_ = currentTime;
     }
 
@@ -211,6 +214,14 @@ namespace cg1 {
             ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiSetCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(500, 200), ImGuiSetCond_FirstUseEver);
             ImGui::Begin("Render Parameters");
+            std::stringstream ss;
+            if(lastFPS_ > 0)
+            	lastFPS_ = lastFPS_*0.99 + 1/(currentTime_-lastUpdate_)*0.01;
+            else
+            	lastFPS_ = 1/(currentTime_-lastUpdate_);
+
+            ss << "Framerate: " << (int)lastFPS_ << " FPS";
+            ImGui::Text(ss.str().c_str());
             ImGui::Text("General Settings");
             ImGui::Checkbox("Enable Phong Lighting",&enableLighting_);
             ImGui::Checkbox("Enable Shadowmapping",&enableShadowMapping_);
