@@ -102,7 +102,7 @@ namespace cg1 {
         // Setup scene
         ADD_SCENE_OBJECT("terrainSurface.obj",{"terrain_DIFFUSE.jpg" COMMA "terrain_NORMAL.jpg"},
         		glm::vec3(0,0,0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
-				100,glm::vec3(1,1,1),
+				1,glm::vec3(1,1,1),
 				SceneObject::DEFAULT, 
 				1);
         ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg" COMMA "water_NORMAL.jpg"},
@@ -111,7 +111,7 @@ namespace cg1 {
 				SceneObject::WATER,
 				1);
 
-        ADD_SCENE_OBJECT("Stonehengebed.obj",{"192.jpg" COMMA "192_norm.jpg"},
+        ADD_SCENE_OBJECT("Stonehengebed.obj",{"192.JPG" COMMA "192_norm.JPG"},
         		glm::vec3(0, 1, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
 				100,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
@@ -191,6 +191,7 @@ namespace cg1 {
 
         getLightUniformLocations();
 		initShadowMapping();
+
     }
 
     /**

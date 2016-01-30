@@ -28,10 +28,19 @@ SceneObject::SceneObject(const std::string& mesh, std::initializer_list<std::str
 	bumpMappingStatus = 0;
 	
 	m_pMesh = std::make_unique<Mesh>(PATH_MESHES + "/" + mesh);
+	int i = 0;
 	for (std::initializer_list<std::string>::iterator it = textures.begin(); it != textures.end(); ++it) {
 		std::cout << "Loading texture " << *it << " ...";
 		m_Textures.push_back(std::make_unique<Texture>(PATH_TEXTURES + "/" + *it));
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, m_Textures.back()->getTextureId());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glGenerateMipmap(GL_TEXTURE_2D);
 		std::cout << "Done." << std::endl;
+		i++;
 	}
 	m_shaderMode = tShaderMode::DEFAULT;
 }
@@ -41,8 +50,6 @@ void SceneObject::bindTexturesAndDrawMesh() {
 	for (std::vector<std::unique_ptr<Texture> >::iterator it = m_Textures.begin(); it != m_Textures.end(); ++it) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, (*it)->getTextureId());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		++i;
 	}
 	m_pMesh->DrawComplete();

@@ -72,35 +72,22 @@ float texture2DArrayCompare(int lightNr, vec4 shadowCoord, float bias){
     
 	if(allLights[lightNr].position.w == 0){
     	depth = texture2DArray(shadowTexArray, vec3(shadowCoord.xy,lightNr)).r;
-    	return step(shadowCoord.z, depth+bias);
+    	return shadowCoord.z < depth+bias? 1:0;
     }
    
 	else if(allLights[lightNr].coneAngle <180){
 		depth = texture2DArray(shadowTexArray, vec3(shadowCoord.xy/shadowCoord.w,lightNr)).r;
-    	return step(shadowCoord.z/shadowCoord.w, depth+bias);
+    	return shadowCoord.z/shadowCoord.w < depth+bias?1:0;
 	}
 	else
 		return 1;
     
 }
 
-bool isShadowed(int lightNr, vec3 surfaceToLightViewSpace, vec4 loc, vec2 offset)
-{ 
-	float cosTheta = clamp(dot(fragNormalViewSpace, surfaceToLightViewSpace),0,1);
-	float bias = 0.00;//*cosTheta;
-	bias = clamp(bias, 0.0,0.01);
-	
-	if(allLights[lightNr].position.w == 0)
-		return texture2DArray( shadowTexArray, vec3(loc.xy + offset.xy, lightNr) ).x  <  loc.z - bias;
-	// Perspecive devision for spot light
-	else if(allLights[lightNr].coneAngle <180)
-		return texture2DArray( shadowTexArray, vec3((loc.xy + offset.xy)/loc.w, lightNr) ).x  <  (loc.z - bias)/loc.w;
-}
-
 float smoothedShadowCoeff(int lightNr, vec3 surfaceToLightViewSpace)
 {
 	float cosTheta = clamp(dot(fragNormalViewSpace, surfaceToLightViewSpace),0,1);
-	float bias = 0.005 ;//*cosTheta;
+	float bias = 0.005*cosTheta;
 	bias = clamp(bias, 0.0,0.01);
 	
 	vec4 shadowCoord = fragVertShadowClip[lightNr];
@@ -117,7 +104,7 @@ float smoothedShadowCoeff(int lightNr, vec3 surfaceToLightViewSpace)
 	 );
  
 	for (int i = 0; i < 4; i ++)
-	  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i],0,0)/512.0,bias);
+	  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i]/512.0,0,0),bias);
 	  	
 	return sum/4.0;
 }
@@ -161,9 +148,8 @@ vec3 ApplyLight(int lightNr, vec3 surfaceColor, vec3 normalViewSpace, vec3 surfa
 
 	// Shadow Mapping
 	if (enableShadowMapping == 1){
-		
 		float visibility  = smoothedShadowCoeff(lightNr,surfaceToLightViewSpace);
-
+		
     	// linear color (color before gamma correction)
     	return ambient + visibility*attenuation*(diffuse + specular);
  	}else{
