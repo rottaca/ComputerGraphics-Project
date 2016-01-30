@@ -66,18 +66,11 @@ void emptyShader();
 
 float texture2DArrayCompare(int lightNr, vec4 shadowCoord, float bias){
 
-
-    float depth;
-    
-    
 	if(allLights[lightNr].position.w == 0){
-    	depth = texture2DArray(shadowTexArray, vec3(shadowCoord.xy,lightNr)).r;
-    	return shadowCoord.z < depth+bias? 1:0;
+    	return texture2DArray(shadowTexArray, vec3(shadowCoord.xy,lightNr)).x <  shadowCoord.z-bias? 0.1:1;
     }
-   
 	else if(allLights[lightNr].coneAngle <180){
-		depth = texture2DArray(shadowTexArray, vec3(shadowCoord.xy/shadowCoord.w,lightNr)).r;
-    	return shadowCoord.z/shadowCoord.w < depth+bias?1:0;
+		return texture2DArray(shadowTexArray, vec3(shadowCoord.xy/shadowCoord.w,lightNr)).x < (shadowCoord.z - bias)/shadowCoord.w? 0:1;
 	}
 	else
 		return 1;

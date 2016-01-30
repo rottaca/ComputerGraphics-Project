@@ -102,7 +102,7 @@ namespace cg1 {
         // Setup scene
         ADD_SCENE_OBJECT("terrainSurface.obj",{"terrain_DIFFUSE.jpg" COMMA "terrain_NORMAL.jpg"},
         		glm::vec3(0,0,0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
-				1,glm::vec3(1,1,1),
+				10,glm::vec3(1,1,1),
 				SceneObject::DEFAULT, 
 				1);
         ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg" COMMA "water_NORMAL.jpg"},
@@ -113,24 +113,24 @@ namespace cg1 {
 
         ADD_SCENE_OBJECT("Stonehengebed.obj",{"192.JPG" COMMA "192_norm.JPG"},
         		glm::vec3(0, 1, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
-				100,glm::vec3(1,1,1),
+				10,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				1);
 
 
         ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
         		glm::vec3(1,1,5),glm::vec3(0,1,0),glm::radians(-45.0f),glm::vec3(0.2,0.2,0.2),
-				100,glm::vec3(1,1,1),
+				1,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				0);
         ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
         		glm::vec3(0,1,5),glm::vec3(0,1,0),glm::radians(70.0f),glm::vec3(0.2,0.2,0.2),
-				100,glm::vec3(1,1,1),
+				1,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				0);
         ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
         		glm::vec3(-1,1,5),glm::vec3(0,1,0),glm::radians(20.0f),glm::vec3(0.2,0.2,0.2),
-				100,glm::vec3(1,1,1),
+				1,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				0);
 
@@ -411,15 +411,13 @@ namespace cg1 {
         printOpenGLError();
 		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, shadowMapSize_, shadowMapSize_, gLights.size());
         printOpenGLError();
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		printOpenGLError();
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		printOpenGLError();
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		printOpenGLError();
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		printOpenGLError();
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 		printOpenGLError();
         std::cout << "Done." << std::endl;
 
