@@ -51,7 +51,7 @@ namespace cg1 {
 		depthTextureSlot{10},
 		enableLighting_{true},
 		enableShadowMapping_{true},
-		enableBumpMapping_{true},
+		enableNormalMapping_{true},
 		enableWater_{true},
 		enableFlashLights_{true},
 		enableSmoothShadows_{false},
@@ -73,8 +73,8 @@ namespace cg1 {
         timeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "time");
         depthTextureArrayUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "shadowTexArray");
         enableShadowMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableShadowMapping");
-		enableBumpMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableBumpMapping");
-		hasBumpMapUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "hasBumpMap");
+		enableNormalMappingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableNormalMapping");
+		hasNormalMapUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "hasNormalMap");
         enableLightingUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableLighting");
         waterModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "waterMode");
         materialSpecularColUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "material.specularColor");
@@ -82,12 +82,12 @@ namespace cg1 {
         enableSmoothShadowsUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableSmoothShadows");
 
     	std::cout << "Creating Scene Objects ..." << std::endl;
-#define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE, HAS_BUMP_MAP) {\
+#define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE, HAS_NORMAL_MAP) {\
 			SceneObject* obj = new SceneObject(OBJ_FILE,TEX_LIST); \
 			obj->setTransformation(T,R_AXIS,R_ANGLE,S);\
 			obj->setMaterialAttributes(SHININESS,SPEC_COLOR);\
 			obj->setShaderMode(SHADER_MODE);\
-			obj->setBumpMappingStatus(HAS_BUMP_MAP);\
+			obj->setNormalMappingStatus(HAS_NORMAL_MAP);\
 			m_sceneObjects.push_back(obj);\
     	}
 #define ADD_FLASHLIGHT(P,LOOK_AT) {\
@@ -118,21 +118,35 @@ namespace cg1 {
 				1);
 
 
-        ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
-        		glm::vec3(1,1,5),glm::vec3(0,1,0),glm::radians(-45.0f),glm::vec3(0.2,0.2,0.2),
+//        ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
+//        		glm::vec3(1,1,5),glm::vec3(0,1,0),glm::radians(-45.0f),glm::vec3(0.2,0.2,0.2),
+//				1,glm::vec3(1,1,1),
+//				SceneObject::DEFAULT,
+//				0);
+//        ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
+//        		glm::vec3(0,1,5),glm::vec3(0,1,0),glm::radians(70.0f),glm::vec3(0.2,0.2,0.2),
+//				1,glm::vec3(1,1,1),
+//				SceneObject::DEFAULT,
+//				0);
+//        ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
+//        		glm::vec3(-1,1,5),glm::vec3(0,1,0),glm::radians(20.0f),glm::vec3(0.2,0.2,0.2),
+//				1,glm::vec3(1,1,1),
+//				SceneObject::DEFAULT,
+//				0);
+
+
+
+        ADD_SCENE_OBJECT("Farmhouse OBJ.obj",{"Farmhouse Texture.jpg"},
+        		glm::vec3(0,1,7),glm::vec3(0,1,0),glm::radians(180.0f),glm::vec3(0.1,0.1,0.1),
 				1,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				0);
-        ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
-        		glm::vec3(0,1,5),glm::vec3(0,1,0),glm::radians(70.0f),glm::vec3(0.2,0.2,0.2),
+
+        ADD_SCENE_OBJECT("bridge.obj",{"bridge.jpg" COMMA "bridge_normal.jpg"},
+        		glm::vec3(7,0,0),glm::vec3(0,1,0),glm::radians(90.0f),glm::vec3(1,1,1),
 				1,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
-				0);
-        ADD_SCENE_OBJECT("Road-Blocker.obj",{"RoadBlocker_diffuse.png"},
-        		glm::vec3(-1,1,5),glm::vec3(0,1,0),glm::radians(20.0f),glm::vec3(0.2,0.2,0.2),
-				1,glm::vec3(1,1,1),
-				SceneObject::DEFAULT,
-				0);
+				1);
 
 
     	std::cout << "Creating Lights ..." << std::endl;
@@ -183,7 +197,8 @@ namespace cg1 {
         //ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(-30.0f)), glm::vec3(0,1.5,0));
         ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,3,0),glm::radians(45.0f)), glm::vec3(0,1.5,0));
         ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,2.5,0),glm::radians(140.0f)), glm::vec3(0,1.5,0));
-        ADD_FLASHLIGHT(glm::rotateY(glm::vec3(7,1.20,0),glm::radians(270.0f)), glm::vec3(0,2.25,0));
+
+        ADD_FLASHLIGHT(glm::vec3(1.4,2.5,10), glm::vec3(0,1,7));
 
         std::cout << "Sceneobjects (meshes): " << m_sceneObjects.size() << std::endl;
         std::cout << "Light Sources: " << gLights.size() << std::endl;
@@ -244,7 +259,7 @@ namespace cg1 {
             ImGui::Text(ss.str().c_str());
             ImGui::Text("General Settings");
             ImGui::Checkbox("Enable Phong Lighting",&enableLighting_);
-			ImGui::Checkbox("Enable Bumpmapping", &enableBumpMapping_);
+			ImGui::Checkbox("Enable Normalmapping", &enableNormalMapping_);
             ImGui::Checkbox("Enable Shadow-Mapping",&enableShadowMapping_);
             ImGui::Checkbox("Enable Smooth shadows",&enableSmoothShadows_);
             ImGui::Checkbox("Enable Flashlights",&enableFlashLights_);
@@ -299,7 +314,7 @@ namespace cg1 {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
     	glUniform1i(depthTextureArrayUniformLocation_,depthTextureSlot);
 
-		enableBumpMapping(enableBumpMapping_);
+		enableNormalMapping(enableNormalMapping_);
         enableShadowMapping(enableShadowMapping_, enableSmoothShadows_);
         if(enableShadowMapping_){
         	// Shadow mapping: Render to depth buffer
@@ -383,7 +398,7 @@ namespace cg1 {
 				}
     		}
 
-			glUniform1i(hasBumpMapUniformLocation_, so->getBumpMappingStatus());
+			glUniform1i(hasNormalMapUniformLocation_, so->getNormalMappingStatus());
             glUniform1i(shaderModeUniformLocation_, mode);
     		printOpenGLError();
             glm::mat4 mm = so->getModelMatrix();
@@ -518,9 +533,9 @@ namespace cg1 {
         enableShadowMapping_ = enable;
     }
 
-	void Scene::enableBumpMapping(bool enable)
+	void Scene::enableNormalMapping(bool enable)
 	{
-		glUniform1i(enableBumpMappingUniformLocation_, enable ? 1 : 0);
+		glUniform1i(enableNormalMappingUniformLocation_, enable ? 1 : 0);
 		printOpenGLError();
 	}
 

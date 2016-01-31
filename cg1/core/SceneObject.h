@@ -52,8 +52,8 @@ namespace cg1 {
 		// anlge is in radian
 		void rotate(GLfloat angle, glm::vec3 axis = glm::vec3(0.0, 1.0, 0.0));
 		void scale(glm::vec3 factors);
-		void setBumpMappingStatus(int status);
-		int getBumpMappingStatus() { return bumpMappingStatus; }
+		void setNormalMappingStatus(int status);
+		int getNormalMappingStatus() { return bumpMappingStatus; }
 
 		virtual void setTransformation(glm::vec3 T, glm::vec3 RAxis, float angle, glm::vec3 S);
 

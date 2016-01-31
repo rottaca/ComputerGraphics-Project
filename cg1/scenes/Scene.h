@@ -66,7 +66,7 @@ namespace cg1 {
         glm::mat4 calculateDepthVPMat(int lightIdx);
 
 
-		void enableBumpMapping(bool enable);
+		void enableNormalMapping(bool enable);
         void enableShadowMapping(bool enable, bool smooth);
         void enableLighting(bool enable);
 
@@ -130,15 +130,15 @@ namespace cg1 {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         int shadowMapSize_;
         bool enableShadowMapping_;
-		bool enableBumpMapping_;
+		bool enableNormalMapping_;
         bool enableSmoothShadows_;
         int depthTextureSlot;
         std::vector<GLuint> frameBufferId_;
         GLuint depthTextureArrayId_;
         GLuint depthTextureArrayUniformLocation_;
         GLint enableShadowMappingUniformLocation_;
-		GLint enableBumpMappingUniformLocation_;
-		GLint hasBumpMapUniformLocation_;
+		GLint enableNormalMappingUniformLocation_;
+		GLint hasNormalMapUniformLocation_;
         GLint enableSmoothShadowsUniformLocation_;
 
         bool enableFlashLights_;

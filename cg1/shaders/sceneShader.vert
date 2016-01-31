@@ -38,10 +38,10 @@ out vec4 fragVertShadowClip[MAX_LIGHTS];
 uniform int numLights;
 
 /////////////////////////////////////////////////////////////////////////////
-// BumpMapping
+// NormalMapping
 /////////////////////////////////////////////////////////////////////////////
-uniform int enableBumpMapping; // 0: disabled, 1:enabled
-uniform int hasBumpMap; // 0: disabled, 1:enabled
+uniform int enableNormalMapping; // 0: disabled, 1:enabled
+uniform int hasNormalMap; // 0: disabled, 1:enabled
 out vec3 fragTangentViewSpace;
 
 struct waveData{
@@ -214,7 +214,7 @@ void waterShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
-	if(enableBumpMapping == 1 && hasBumpMap == 1)
+	if(enableNormalMapping == 1 && hasNormalMap == 1)
 		fragTangentViewSpace = normalize(mat3(matV)*mat3(matNormal)*tangent);
 
 	switch(shaderMode){

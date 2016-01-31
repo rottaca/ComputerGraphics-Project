@@ -41,10 +41,10 @@ uniform sampler2DArray shadowTexArray;
 in vec4 fragVertShadowClip[MAX_LIGHTS];
 
 /////////////////////////////////////////////////////////////////////////////
-// Bump Mapping
+// Normal Mapping
 /////////////////////////////////////////////////////////////////////////////
-uniform int enableBumpMapping; // 0: disabled, 1:enabled
-uniform int hasBumpMap; // 0: disabled, 1:enabled
+uniform int enableNormalMapping; // 0: disabled, 1:enabled
+uniform int hasNormalMap; // 0: disabled, 1:enabled
 in vec3 fragTangentViewSpace;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@ void emptyShader(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
-	if(enableBumpMapping == 1 && hasBumpMap == 1){
+	if(enableNormalMapping == 1 && hasNormalMap == 1){
 		vec3 fragBitangentViewSpace = cross(fragTangentViewSpace, fragVaryingNormalViewSpace);
 
 		mat3 TBN = mat3(fragTangentViewSpace.x, fragTangentViewSpace.y, fragTangentViewSpace.z,

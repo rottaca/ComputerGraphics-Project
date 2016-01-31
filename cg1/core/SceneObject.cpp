@@ -98,7 +98,7 @@ glm::vec3 SceneObject::getSpecularColor() {
 	return materialAttributes.specularColor;
 }
 
-void SceneObject::setBumpMappingStatus(int status) {
+void SceneObject::setNormalMappingStatus(int status) {
 	bumpMappingStatus = status;
 }
 

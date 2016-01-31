@@ -19,7 +19,7 @@ namespace cg1 {
         lastTime_{ 0.0 },
         mousePosition_{ 0.0f, 0.0f },
         mousePositionNormalized_{ 0.0f, 0.0f, 0.0f },
-        camera_{ 60.0f, windowSize_.x / windowSize_.y, windowSize_, 1.0f, 100.0f, glm::vec3(0.0f, 0.0f, -10.0f) }
+        camera_{ 60.0f, windowSize_.x / windowSize_.y, windowSize_, 1.0f, 100.0f, glm::vec3(0.0f, 0.0f, -20.0f) }
     {
         glfwInit();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
