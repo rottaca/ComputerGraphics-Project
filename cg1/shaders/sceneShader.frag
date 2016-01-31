@@ -97,7 +97,7 @@ float smoothedShadowCoeff(int lightNr, vec3 surfaceToLightViewSpace)
 	 );
  
 	for (int i = 0; i < 4; i ++)
-	  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i]/512.0,0,0),bias);
+	  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i]/900.0,0,0),bias);
 	  	
 	return sum/4.0;
 }
