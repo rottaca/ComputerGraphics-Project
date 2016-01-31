@@ -1,7 +1,20 @@
 # [CG1 Framework](https://bitbucket.org/diemysh/cgi_framework)
 
+
 ## Summary
 CG1 Framework is a framework for OpenGL used in the Computer Graphics 1 lecture at Ulm University. It is loosely based on [Glitter](https://github.com/Polytonic/Glitter). It compiles and statically links every required library.
+
+## Our Results
+Here you can see some images of our final project.
+!(assets/cg1_Project1.png?raw=true "CG1 Project")
+!(assets/cg1_Project2.png?raw=true "CG1 Project")
+!(assets/cg1_Project3.png?raw=true "CG1 Project")
+!(assets/cg1_Project4.png?raw=true "CG1 Project")
+!(assets/cg1_Project5.png?raw=true "CG1 Project")
+
+
+
+
 
 ## Getting Started
 This framework needs [cmake](http://www.cmake.org/download/) to create platform-specific makefiles or project files. To generate a project file or makefile for your platform you need the IDE installed that you want to use. Don't forget to set the Start-Up Project in Visual Studio or the Target in Xcode.
