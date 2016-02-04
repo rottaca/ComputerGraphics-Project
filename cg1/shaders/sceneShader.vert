@@ -20,6 +20,7 @@ uniform mat4 matV;
 uniform float time;
 uniform int shaderMode;
 uniform	int waterMode;
+uniform int enablePostProc;
 
 /////////////////////////////////////////////////////////////////////////////
 // Varyings
@@ -209,11 +210,22 @@ void waterShader(){
     }
 }
 
+void postProcShader(){
+	fragTexCoord  = texCoord;
+    gl_Position = matVP * position;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Main
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+	if(enablePostProc == 1)
+	{
+		postProcShader();
+		return;
+	}
+	
 	if(enableNormalMapping == 1 && hasNormalMap == 1)
 		fragTangentViewSpace = normalize(mat3(matV)*mat3(matNormal)*tangent);
 

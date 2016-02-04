@@ -7,6 +7,10 @@
 /////////////////////////////////////////////////////////////////////////////
 uniform sampler2D tex;	// Diffuse texture
 uniform sampler2D normalTex;
+uniform sampler2D postProcTexColor;
+
+uniform int enablePostProc;
+uniform	int postProcMode ;
 
 /////////////////////////////////////////////////////////////////////////////
 // Light
@@ -191,11 +195,83 @@ void emptyShader(){
 	//outputColor = vec4(fragTangentViewSpace,1.0f);
 }
 
+void postProcShader(){
+
+	outputColor = texture(postProcTexColor,fragTexCoord.xy);
+	
+	if(postProcMode == 1)
+	{
+		int gausKernel[25] = int[](
+			1,4,7,4,1,
+			4,16,26,16,4,
+			7,26,41,26,7,
+			4,16,26,16,4,
+			1,4,7,4,1
+		);
+		
+		vec3 sum = vec3(0.0f);
+		for(int i = -2; i <= 2; i++){
+			for(int j = -2; j <= 2; j++){
+				sum += gausKernel[2+i+5*(2+j)]*texture(postProcTexColor,fragTexCoord.xy + vec2(i/1280.0,j/720.0)).rgb;
+			}
+		}
+		
+		outputColor = vec4(sum/273.0,1.0f);
+	}
+	else if(postProcMode == 2)
+	{
+		int sobelX[9] = int[](
+			1,0,-1,
+			2,0,-2,
+			1,0,-1
+		);
+		int sobelY[9] = int[](
+			1,2,1,
+			0,0,0,
+			-1,-2,-1
+		);
+		
+		vec3 sumX = vec3(0.0f);
+		vec3 sumY = vec3(0.0f);
+		for(int i = -1; i <=1 ; i++){
+			for(int j = -1; j <=1 ; j++){
+				sumX += sobelX[1+i+3*(1+j)]*texture(postProcTexColor,fragTexCoord.xy + vec2(i/1280.0,j/720.0)).rgb;
+				sumY += sobelY[1+i+3*(1+j)]*texture(postProcTexColor,fragTexCoord.xy + vec2(i/1280.0,j/720.0)).rgb;
+			}
+		}
+		float val = sqrt(length(sumX)+length(sumY));
+		outputColor = vec4(vec3(val),1.0f);
+	}
+	else if(postProcMode == 3)
+	{
+		int sharpKernel[9] = int[](
+			0,-1,0,
+			-1,5,-1,
+			0,-1,0
+		);
+		
+		vec3 sum = vec3(0.0f);
+		for(int i = -1; i <= 1; i++){
+			for(int j = -1; j <= 1; j++){
+				sum += sharpKernel[1+i+3*(1+j)]*texture(postProcTexColor,fragTexCoord.xy + vec2(i/1280.0,j/720.0)).rgb;
+			}
+		}
+		
+		outputColor = vec4(sum,1.0f);
+	}
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Main
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+	if(enablePostProc == 1)
+	{
+		postProcShader();
+		return;
+	}
 	if(enableNormalMapping == 1 && hasNormalMap == 1){
 		vec3 fragBitangentViewSpace = cross(fragTangentViewSpace, fragVaryingNormalViewSpace);
 

@@ -54,10 +54,14 @@ namespace cg1 {
 		enableNormalMapping_{false},
 		enableWater_{false},
 		enableFlashLights_{false},
+		enablePostProc_{false},
 		enableSmoothShadows_{0},
+		textureSlotPostProc_{5},
 		waterMode_{1},
 		lastUpdate_{0},
-		lastFPS_{-1}
+		lastFPS_{-1},
+		postProcMode_{1},
+		planeMesh_{std::make_unique<Mesh>("meshes/Plane.obj")}
     {
     	m_sceneObjects.clear();
     	gLights.clear();
@@ -80,6 +84,9 @@ namespace cg1 {
         materialSpecularColUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "material.specularColor");
         materialShininessUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "material.shininess");
         enableSmoothShadowsUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enableSmoothShadows");
+        texColorPostProcUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "postProcTexColor");
+        enablePostProcUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "enablePostProc");
+        postProcModeUniformLocation_ = glGetUniformLocation(program_->getProgramId(), "postProcMode");
 
     	std::cout << "Creating Scene Objects ..." << std::endl;
 #define ADD_SCENE_OBJECT(OBJ_FILE, TEX_LIST,T,R_AXIS,R_ANGLE,S, SHININESS, SPEC_COLOR, SHADER_MODE, HAS_NORMAL_MAP) {\
@@ -206,7 +213,7 @@ namespace cg1 {
 
         getLightUniformLocations();
 		initShadowMapping();
-
+		initPostProcessing();
     }
 
     /**
@@ -271,6 +278,11 @@ namespace cg1 {
             ImGui::RadioButton("Small waves",&waterMode_,0);
             ImGui::RadioButton("Middle waves",&waterMode_,1);
             ImGui::RadioButton("High waves",&waterMode_,2);
+            ImGui::Text("Postprocessing");
+            ImGui::Checkbox("Enable Postprocessing",&enablePostProc_);
+            ImGui::RadioButton("Gaussian Filter",&postProcMode_,1);
+            ImGui::RadioButton("Sobel Filter",&postProcMode_,2);
+            ImGui::RadioButton("Sharp Filter",&postProcMode_,3);
             ImGui::End();
         }
 
@@ -311,6 +323,7 @@ namespace cg1 {
         glUniform1i(tex0UniformLocation_,0);
 		glUniform1i(tex1UniformLocation_, 1);
 
+		glUniform1i(enablePostProcUniformLocation_,0);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Render Scene
@@ -325,6 +338,13 @@ namespace cg1 {
         }
 
         renderRealImage();
+
+		glUniform1i(enablePostProcUniformLocation_,enablePostProc_?1:0);
+        printOpenGLError();
+
+        if(enablePostProc_){
+        	renderPostProcImage();
+        }
 
         glUseProgram(0);
     }
@@ -496,8 +516,13 @@ namespace cg1 {
     }
     void Scene::renderRealImage()
     {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        printOpenGLError();
+        if(enablePostProc_){
+			glBindFramebuffer(GL_FRAMEBUFFER, frameBufferPostProc_);
+			printOpenGLError();
+        }else{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			printOpenGLError();
+        }
     	glViewport(0,0, config::windowWidth, config::windowHeight);
         printOpenGLError();
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -587,5 +612,68 @@ namespace cg1 {
     		l->coneAngleLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneAngle", i).c_str());
     		l->coneDirectionLoc = glGetUniformLocation(program_->getProgramId(), getLightUniformName("coneDirection", i).c_str());
     	}
+    }
+    void Scene::initPostProcessing(){
+
+		  glGenFramebuffers(1, &frameBufferPostProc_);
+	        printOpenGLError();
+		  glBindFramebuffer(GL_FRAMEBUFFER, frameBufferPostProc_);
+	        printOpenGLError();
+
+		  glGenTextures(1, &texColorPostProc_);
+		  glBindTexture(GL_TEXTURE_2D, texColorPostProc_);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, config::windowWidth, config::windowHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+
+		  /* Depth buffer */
+		  GLuint buffDepthPostProc;
+		  glGenRenderbuffers(1, &buffDepthPostProc);
+	        printOpenGLError();
+		  glBindRenderbuffer(GL_RENDERBUFFER, buffDepthPostProc);
+	        printOpenGLError();
+		  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, config::windowWidth, config::windowHeight);
+	        printOpenGLError();
+
+		  /* Framebuffer to link everything together */
+		  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorPostProc_, 0);
+	        printOpenGLError();
+		  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, buffDepthPostProc);
+	        printOpenGLError();
+		  GLenum status;
+		  if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
+			fprintf(stderr, "glCheckFramebufferStatus: error %p", status);
+			exit(-1);
+		  }
+
+		  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    void Scene::renderPostProcImage()
+    {
+    	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		printOpenGLError();
+		glViewport(0,0, config::windowWidth, config::windowHeight);
+		printOpenGLError();
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		printOpenGLError();
+
+		glUniform1i(texColorPostProcUniformLocation_, textureSlotPostProc_);
+        printOpenGLError();
+
+		glUniform1i(postProcModeUniformLocation_, postProcMode_);
+        printOpenGLError();
+
+		glActiveTexture(GL_TEXTURE0 + textureSlotPostProc_);
+		printOpenGLError();
+		glBindTexture(GL_TEXTURE_2D, texColorPostProc_);
+		printOpenGLError();
+
+        glm::mat4 orthoProj = glm::ortho<float>(-1, 1, -1, 1, -1, 1);
+		glUniformMatrix4fv(matVPUniformLocation_, 1, GL_FALSE, reinterpret_cast<GLfloat*>(&orthoProj));
+
+		planeMesh_->DrawComplete();
     }
 }

@@ -59,12 +59,13 @@ namespace cg1 {
 
         void renderSceneObjects(bool onlyDepth=false);
 
+        void initPostProcessing();
 
         void initShadowMapping();
         void renderDepthImage();
         void renderRealImage();
+        void renderPostProcImage();
         glm::mat4 calculateDepthVPMat(int lightIdx);
-
 
 		void enableNormalMapping(bool enable);
         void enableShadowMapping(bool enable, int smooth);
@@ -143,6 +144,17 @@ namespace cg1 {
 
         bool enableFlashLights_;
 
-
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        // PostProcessing
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        GLuint frameBufferPostProc_;
+        GLuint texColorPostProc_;
+        std::unique_ptr<Mesh> planeMesh_;
+        GLuint texColorPostProcUniformLocation_;
+        GLuint enablePostProcUniformLocation_;
+        GLuint postProcModeUniformLocation_;
+        int textureSlotPostProc_;
+        bool enablePostProc_;
+        int postProcMode_;
     };
 }
