@@ -47,15 +47,15 @@ namespace cg1 {
         VPMatrix_{ 1.0f },
 		viewMatrix_{1.0f},
 		currentTime_{0},
-		shadowMapSize_{1024},
+		shadowMapSize_{1536},
 		depthTextureSlot{10},
-		enableLighting_{true},
-		enableShadowMapping_{true},
-		enableNormalMapping_{true},
-		enableWater_{true},
-		enableFlashLights_{true},
-		enableSmoothShadows_{false},
-		waterMode_{0},
+		enableLighting_{false},
+		enableShadowMapping_{false},
+		enableNormalMapping_{false},
+		enableWater_{false},
+		enableFlashLights_{false},
+		enableSmoothShadows_{0},
+		waterMode_{1},
 		lastUpdate_{0},
 		lastFPS_{-1}
     {
@@ -107,13 +107,13 @@ namespace cg1 {
 				1);
         ADD_SCENE_OBJECT("waterSurface.obj",{"water_DIFFUSE.jpg" COMMA "water_NORMAL.jpg"},
         		glm::vec3(0, -2.2, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
-				100,glm::vec3(1,1,1),
+				50,glm::vec3(10,10,10),
 				SceneObject::WATER,
 				1);
 
         ADD_SCENE_OBJECT("Stonehengebed.obj",{"192.JPG" COMMA "192_norm.JPG"},
         		glm::vec3(0, 1, 0),glm::vec3(0,1,0),glm::radians(0.0f),glm::vec3(1,1,1),
-				10,glm::vec3(1,1,1),
+				7,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				1);
 
@@ -144,7 +144,7 @@ namespace cg1 {
 
         ADD_SCENE_OBJECT("bridge.obj",{"bridge.jpg" COMMA "bridge_normal.jpg"},
         		glm::vec3(7,0,0),glm::vec3(0,1,0),glm::radians(90.0f),glm::vec3(1,1,1),
-				1,glm::vec3(1,1,1),
+				10,glm::vec3(1,1,1),
 				SceneObject::DEFAULT,
 				1);
 
@@ -260,9 +260,12 @@ namespace cg1 {
             ImGui::Text("General Settings");
             ImGui::Checkbox("Enable Phong Lighting",&enableLighting_);
 			ImGui::Checkbox("Enable Normalmapping", &enableNormalMapping_);
-            ImGui::Checkbox("Enable Shadow-Mapping",&enableShadowMapping_);
-            ImGui::Checkbox("Enable Smooth shadows",&enableSmoothShadows_);
             ImGui::Checkbox("Enable Flashlights",&enableFlashLights_);
+            ImGui::Text("Shadow Settings");
+            ImGui::Checkbox("Enable Shadow-Mapping",&enableShadowMapping_);
+            ImGui::RadioButton("No smooth shadows",&enableSmoothShadows_,0);
+            ImGui::RadioButton("Fast smooth shadows",&enableSmoothShadows_,1);
+            ImGui::RadioButton("slow smooth shadows",&enableSmoothShadows_,2);
             ImGui::Text("Water Settings");
             ImGui::Checkbox("Enable Water",&enableWater_);
             ImGui::RadioButton("Small waves",&waterMode_,0);
@@ -426,14 +429,16 @@ namespace cg1 {
         printOpenGLError();
 		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, shadowMapSize_, shadowMapSize_, gLights.size());
         printOpenGLError();
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		printOpenGLError();
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		printOpenGLError();
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		printOpenGLError();
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		printOpenGLError();
+		glm::vec4 borderColor(1,1,1,1);
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, reinterpret_cast<GLfloat*>(&borderColor));
         std::cout << "Done." << std::endl;
 
     	std::cout << "Generate Framebuffers ...";
@@ -525,10 +530,10 @@ namespace cg1 {
         renderSceneObjects();
 
     }
-    void Scene::enableShadowMapping(bool enable, bool smooth)
+    void Scene::enableShadowMapping(bool enable, int smooth)
     {
         glUniform1i(enableShadowMappingUniformLocation_, enable?1:0);
-        glUniform1i(enableSmoothShadowsUniformLocation_, smooth?1:0);
+        glUniform1i(enableSmoothShadowsUniformLocation_, smooth);
 		printOpenGLError();
         enableShadowMapping_ = enable;
     }

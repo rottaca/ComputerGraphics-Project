@@ -80,7 +80,7 @@ float texture2DArrayCompare(int lightNr, vec4 shadowCoord, float bias){
 float smoothedShadowCoeff(int lightNr, vec3 surfaceToLightViewSpace)
 {
 	float cosTheta = clamp(dot(fragNormalViewSpace, surfaceToLightViewSpace),0,1);
-	float bias = 0.005*cosTheta;
+	float bias = 0.005*tan(acos(cosTheta));
 	bias = clamp(bias, 0.0,0.01);
 	
 	vec4 shadowCoord = fragVertShadowClip[lightNr];
@@ -89,17 +89,28 @@ float smoothedShadowCoeff(int lightNr, vec3 surfaceToLightViewSpace)
 		return texture2DArrayCompare(lightNr,shadowCoord,bias);
 	
 	float sum = 0;
-	vec2 poissonDisk[4] = vec2[](
-	   vec2( -0.94201624, -0.39906216 ),
-	   vec2( 0.94558609, -0.76890725 ),
-	   vec2( -0.094184101, -0.92938870 ),
-	   vec2( 0.34495938, 0.29387760 )
-	 );
- 
-	for (int i = 0; i < 4; i ++)
-	  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i]/900.0,0,0),bias);
-	  	
-	return sum/4.0;
+  	float shadowMapSize = 700;
+	if(enableSmoothShadows == 1){
+		vec2 poissonDisk[4] = vec2[](
+		   vec2( -0.94201624, -0.39906216 ),
+		   vec2( 0.94558609, -0.76890725 ),
+		   vec2( -0.094184101, -0.92938870 ),
+		   vec2( 0.34495938, 0.29387760 )
+		 );
+	 
+		for (int i = 0; i < 4; i ++)
+		  	sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(poissonDisk[i]*shadowCoord.w/shadowMapSize,0,0),bias);
+	  	sum/= 4.0;
+  	}else if(enableSmoothShadows == 2){
+		for (float i = -1.5; i <= 1.5; i ++)
+			for (float j = -1.5; j<= 1.5; j ++)
+		  		sum += texture2DArrayCompare(lightNr,shadowCoord + vec4(i, j,0,0)*shadowCoord.w/shadowMapSize,bias);
+		  		
+	  	sum = sum/16.0;
+  	
+  	}
+  	
+	return sum;
 }
 
 
@@ -192,7 +203,7 @@ void main()
 					fragBitangentViewSpace.x, fragBitangentViewSpace.y, fragBitangentViewSpace.z,
 					fragVaryingNormalViewSpace.x, fragVaryingNormalViewSpace.y, fragVaryingNormalViewSpace.z);
 
-		fragNormalViewSpace = TBN * normalize(vec3(texture(normalTex,fragTexCoord.xy)) * 2 - 1);
+		fragNormalViewSpace = normalize(TBN * normalize(vec3(texture(normalTex,fragTexCoord.xy)) * 2 - 1));
 	} else
 		fragNormalViewSpace = fragVaryingNormalViewSpace;
 

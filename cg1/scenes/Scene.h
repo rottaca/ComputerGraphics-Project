@@ -67,7 +67,7 @@ namespace cg1 {
 
 
 		void enableNormalMapping(bool enable);
-        void enableShadowMapping(bool enable, bool smooth);
+        void enableShadowMapping(bool enable, int smooth);
         void enableLighting(bool enable);
 
         // Private member variables
@@ -131,7 +131,7 @@ namespace cg1 {
         int shadowMapSize_;
         bool enableShadowMapping_;
 		bool enableNormalMapping_;
-        bool enableSmoothShadows_;
+        int enableSmoothShadows_;
         int depthTextureSlot;
         std::vector<GLuint> frameBufferId_;
         GLuint depthTextureArrayId_;
