@@ -239,7 +239,7 @@ void postProcShader(){
 				sumY += sobelY[1+i+3*(1+j)]*texture(postProcTexColor,fragTexCoord.xy + vec2(i/1280.0,j/720.0)).rgb;
 			}
 		}
-		float val = sqrt(length(sumX)+length(sumY));
+		float val = sqrt(length(sumX)*length(sumX)+length(sumY)*length(sumY));
 		outputColor = vec4(vec3(val),1.0f);
 	}
 	else if(postProcMode == 3)
@@ -258,6 +258,39 @@ void postProcShader(){
 		}
 		
 		outputColor = vec4(sum,1.0f);
+	}
+	else if(postProcMode == 4)
+	{
+		vec3 maxCol = vec3(0);
+				vec3 col = texture(postProcTexColor,fragTexCoord.xy).rgb;
+				float maxV = max(col.r,max(col.g,col.b));
+				
+				if(col.r < maxV)
+					col.r = 0;
+				if(col.g < maxV)
+					col.g = 0;
+				if(col.b < maxV)
+					col.b = 0;
+					
+				if(length(col) > length(maxCol))
+					maxCol = col;
+			
+		
+		outputColor = vec4(maxCol,1.0f);
+	}
+	else if(postProcMode == 5)
+	{
+		vec3 maxCol = vec3(0);
+		for(int i = -3; i <= 3; i++){
+			for(int j = -3; j <= 3; j++){
+				vec3 col = texture(postProcTexColor,fragTexCoord.xy + vec2(i/1280.0,j/720.0)).rgb;
+				
+				if(length(col) > length(maxCol))
+					maxCol = col;
+			}
+		}
+		
+		outputColor = vec4(maxCol,1.0f);
 	}
 
 }

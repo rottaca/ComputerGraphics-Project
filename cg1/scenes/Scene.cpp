@@ -283,6 +283,8 @@ namespace cg1 {
             ImGui::RadioButton("Gaussian Filter",&postProcMode_,1);
             ImGui::RadioButton("Sobel Filter",&postProcMode_,2);
             ImGui::RadioButton("Sharp Filter",&postProcMode_,3);
+            ImGui::RadioButton("RGB-Max Filter",&postProcMode_,4);
+            ImGui::RadioButton("Intensity-Max Filter",&postProcMode_,5);
             ImGui::End();
         }
 
@@ -296,7 +298,10 @@ namespace cg1 {
 
         // Rotate sun and moon
 		for(int i = 0; i < 2; i++){
-			gLights.at(i)->position = glm::rotateZ(gLights.at(i)->position,(currentTime_-lastUpdate_)*0.1f);
+			if(gLights.at(0)->position.y < 0)
+				gLights.at(i)->position = glm::rotateZ(gLights.at(i)->position,(currentTime_-lastUpdate_)*0.3f);
+			else
+				gLights.at(i)->position = glm::rotateZ(gLights.at(i)->position,(currentTime_-lastUpdate_)*0.1f);
 		}
 
         enableLighting(enableLighting_);
